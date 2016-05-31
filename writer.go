@@ -1,6 +1,6 @@
 /*
 
-Writer implementation using an io.Writer as the output.
+Writer interface definition and implementation.
 
 */
 
@@ -36,7 +36,7 @@ type Writer interface {
 	// Align aligns the bit stream to a byte boundary,
 	// so next write will start/go into a new byte.
 	// If there are cached bits, they are first written to the output.
-	// Returns the number of skipped bits.
+	// Returns the number of skipped (unset but still written) bits.
 	Align() (skipped byte, err error)
 }
 

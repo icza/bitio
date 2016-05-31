@@ -1,6 +1,6 @@
 /*
 
-Reader implementation using an io.Reader as the source.
+Reader interface definition and implementation.
 
 */
 
@@ -20,7 +20,7 @@ type Reader interface {
 	// ReadByte reads the next 8 bits and returns them as a byte.
 	io.ByteReader
 
-	// ReadBits reads n bits and returns them as the lowest n bits of r.
+	// ReadBits reads n bits and returns them as the lowest n bits of u.
 	ReadBits(n byte) (u uint64, err error)
 
 	// ReadBool reads the next bit, and returns true if it is 1.
