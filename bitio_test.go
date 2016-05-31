@@ -8,7 +8,7 @@ import (
 )
 
 func TestReader(t *testing.T) {
-	data := []byte{3, 255, 0xcc, 0x1a, 0xbc, 0xde, 0x80}
+	data := []byte{3, 255, 0xcc, 0x1a, 0xbc, 0xde, 0x80, 0x01, 0x02, 0xf8, 0x08, 0xf0}
 
 	br := NewReader(bytes.NewBuffer(data))
 
@@ -37,6 +37,23 @@ func TestReader(t *testing.T) {
 	if b, err := br.ReadBool(); b || err != nil {
 		t.Errorf("Got %v, want %v, error: %v", b, true, err)
 	}
+
+	if n := br.Align(); n != 6 {
+		t.Errorf("Got %v, want %v", n, 6)
+	}
+
+	s := make([]byte, 2)
+	if n, err := br.Read(s); n != 2 || err != nil || !bytes.Equal(s, []byte{0x01, 0x02}) {
+		t.Errorf("Got %v, want %v, error: %v", s, []byte{0x01, 0x02}, err)
+	}
+
+	if i, err := br.ReadBits(4); i != 0xf || err != nil {
+		t.Errorf("Got %x, want %x, error: %v", i, 0xf, err)
+	}
+
+	if n, err := br.Read(s); n != 2 || err != nil || !bytes.Equal(s, []byte{0x80, 0x8f}) {
+		t.Errorf("Got %v, want %v, error: %v", s, []byte{0x80, 0x8f}, err)
+	}
 }
 
 func TestWriter(t *testing.T) {
@@ -44,7 +61,7 @@ func TestWriter(t *testing.T) {
 
 	bw := NewWriter(b)
 
-	expected := []byte{0xc1, 0x7f, 0xac, 0x89, 0x24, 0x78}
+	expected := []byte{0xc1, 0x7f, 0xac, 0x89, 0x24, 0x78, 0x01, 0x02, 0xf8, 0x08, 0xf0}
 
 	errs := []error{}
 	errs = append(errs, bw.WriteByte(0xc1))
@@ -54,6 +71,28 @@ func TestWriter(t *testing.T) {
 	errs = append(errs, bw.WriteByte(0xac))
 	errs = append(errs, bw.WriteBits(0x01, 1))
 	errs = append(errs, bw.WriteBits(0x1248f, 20))
+
+	if n, err := bw.Align(); n != 3 || err != nil {
+		t.Errorf("Got %x, want %x, error: %v", n, 3, err)
+	}
+
+	if n, err := bw.Write([]byte{0x01, 0x02}); n != 2 || err != nil {
+		t.Errorf("Got %x, want %x, error: %v", n, 2, err)
+	}
+
+	errs = append(errs, bw.WriteBits(0x0f, 4))
+
+	if n, err := bw.Write([]byte{0x80, 0x8f}); n != 2 || err != nil {
+		t.Errorf("Got %x, want %x, error: %v", n, 2, err)
+	}
+
+	if n, err := bw.Align(); n != 4 || err != nil {
+		t.Errorf("Got %x, want %x, error: %v", n, 4, err)
+	}
+	if n, err := bw.Align(); n != 0 || err != nil {
+		t.Errorf("Got %x, want %x, error: %v", n, 0, err)
+	}
+
 	errs = append(errs, bw.Close())
 
 	for _, v := range errs {

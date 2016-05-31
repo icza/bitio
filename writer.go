@@ -12,10 +12,14 @@ import (
 )
 
 // Bit writer interface.
+// Must be closed in order to flush cached data.
+// If you can't or don't want to close it, flushing data can also be forced
+// by calling Align().
 type Writer interface {
 	// Writer is an io.Writer and io.Closer.
 	// Close closes the bit writer, writes out cached bits.
-	// If the underlying io.Writer implements io.Closer, it will be closed after writing out cached bits.
+	// If the underlying io.Writer implements io.Closer,
+	// it will be closed after writing out cached bits.
 	io.WriteCloser
 
 	// Writer is also an io.ByteWriter.
