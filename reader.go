@@ -29,7 +29,7 @@ type Reader interface {
 	// Align aligns the bit stream to a byte boundary,
 	// so next read will read/use data from the next byte.
 	// Returns the number of unread / skipped bits.
-	Align() (skipped int)
+	Align() (skipped byte)
 }
 
 // An io.Reader and io.ByteReader at the same time.
@@ -157,8 +157,8 @@ func (r *reader) ReadBool() (b bool, err error) {
 	return
 }
 
-func (r *reader) Align() (skipped int) {
-	skipped = int(r.bits)
+func (r *reader) Align() (skipped byte) {
+	skipped = r.bits
 	r.bits = 0 // no need to clear cache, will be overwritten on next read
 	return
 }

@@ -2,8 +2,9 @@
 
 Package bitio provides a highly optimized bit-level Reader and Writer.
 
-You can use Reader.ReadBits() and Writer.WriteBits() to read or write
-arbitrary number of bits into / from an uint64 value.
+You can use Reader.ReadBits() to read arbitrary number of bits from an io.Reader
+and return it as an uint64, and Writer.WriteBits() to write arbitrary number of bits
+of an uint64 value to an io.Writer.
 
 Both Reader and Writer also provide highly optimized methods for reading / writing
 1 bit of information in the form of a bool value: Reader.ReadBool() and Writer.WriteBool().
@@ -16,6 +17,29 @@ Writer.Write() methods to read and write slices of bytes. These will give you be
 the underlying io.Reader and io.Writer are aligned to a byte boundary (else all the individual bytes
 are assembled from / spread to multiple bytes). You can ensure byte boundary by calling the Align()
 method of Reader and Writer.
+
+Bit order
+
+The more general highest-bits-first order is used. So for example if the input provides the bytes
+
+    HEXA   8    f     5    5
+    BINARY 1100 1111  0101 0101
+           aaaa bbbc  ccdd dddd
+
+Then ReadBits will return the following values:
+
+    a := r.ReadBits(4) //   1100 = 0x08
+    b := r.ReadBits(3) //    111 = 0x07
+    c := r.ReadBits(3) //    101 = 0x05
+    d := r.ReadBits(6) // 010101 = 0x15
+
+Writing the above values would result in the same output:
+
+    w.WriteBits(0x08, 4)
+    w.WriteBits(0x07, 3)
+    w.WriteBits(0x05, 3)
+    w.WriteBits(0x15, 6)
+    // 2 bytes will be written to output: 0x8f and 0x55
 
 */
 package bitio

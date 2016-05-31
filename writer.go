@@ -37,7 +37,7 @@ type Writer interface {
 	// so next write will start/go into a new byte.
 	// If there are cached bits, they are first written to the output.
 	// Returns the number of skipped bits.
-	Align() (skipped int, err error)
+	Align() (skipped byte, err error)
 }
 
 // An io.Writer and io.ByteWriter at the same time.
@@ -164,7 +164,7 @@ func (w *writer) WriteBool(b bool) (err error) {
 	return nil
 }
 
-func (w *writer) Align() (skipped int, err error) {
+func (w *writer) Align() (skipped byte, err error) {
 	if w.bits == 0 {
 		return
 	}
@@ -172,7 +172,7 @@ func (w *writer) Align() (skipped int, err error) {
 		return
 	}
 
-	skipped = int(8 - w.bits)
+	skipped = 8 - w.bits
 	w.cache, w.bits = 0, 0
 	return
 }
