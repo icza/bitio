@@ -29,15 +29,19 @@ The more general highest-bits-first order is used. So for example if the input p
 
 Then ReadBits will return the following values:
 
-    a := r.ReadBits(4) //   1100 = 0x08
-    b := r.ReadBits(3) //    111 = 0x07
-    c := r.ReadBits(3) //    101 = 0x05
-    d := r.ReadBits(6) // 010101 = 0x15
+    r := NewReader(bytes.NewBuffer([]byte{0x8f, 0x55}))
+    a, err := r.ReadBits(4) //   1100 = 0x08
+    b, err := r.ReadBits(3) //    111 = 0x07
+    c, err := r.ReadBits(3) //    101 = 0x05
+    d, err := r.ReadBits(6) // 010101 = 0x15
 
-Writing the above values would result in the same output:
+Writing the above values would result in the same sequence of bytes:
 
-    w.WriteBits(0x08, 4)
-    w.WriteBits(0x07, 3)
-    w.WriteBits(0x05, 3)
-    w.WriteBits(0x15, 6)
-    // 2 bytes will be written to output: 0x8f and 0x55
+    b := &bytes.Buffer{}
+    w := NewWriter(b)
+    err := w.WriteBits(0x08, 4)
+    err = w.WriteBits(0x07, 3)
+    err = w.WriteBits(0x05, 3)
+    err = w.WriteBits(0x15, 6)
+    err = w.Close()
+    // b will hold the bytes: 0x8f and 0x55
