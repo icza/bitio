@@ -2,6 +2,7 @@ package bitio
 
 import (
 	"bytes"
+	"io"
 	"math/rand"
 	"testing"
 	"time"
@@ -103,6 +104,26 @@ func TestWriter(t *testing.T) {
 
 	if !bytes.Equal(b.Bytes(), expected) {
 		t.Errorf("Got: %x, want: %x", b.Bytes(), expected)
+	}
+}
+
+func TestReaderEOF(t *testing.T) {
+	r := NewReader(bytes.NewBuffer([]byte{0x01}))
+
+	if b, err := r.ReadByte(); b != 1 || err != nil {
+		t.Errorf("Got %x, want %x, error: %v", b, 1, err)
+	}
+	if _, err := r.ReadByte(); err != io.EOF {
+		t.Errorf("Got %v, want %v", err, io.EOF)
+	}
+	if _, err := r.ReadBool(); err != io.EOF {
+		t.Errorf("Got %v, want %v", err, io.EOF)
+	}
+	if _, err := r.ReadBits(1); err != io.EOF {
+		t.Errorf("Got %v, want %v", err, io.EOF)
+	}
+	if n, err := r.Read(make([]byte, 2)); n != 0 || err != io.EOF {
+		t.Errorf("Got %v, want %v", err, io.EOF)
 	}
 }
 

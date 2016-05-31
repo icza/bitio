@@ -20,11 +20,11 @@ method of Reader and Writer.
 
 Bit order
 
-The more general highest-bits-first order is used. So for example if the input provides the bytes  0x8f and 0x55:
+The more general highest-bits-first order is used. So for example if the input provides the bytes 0x8f and 0x55:
 
-    HEXA   8    f     5    5
-    BINARY 1100 1111  0101 0101
-           aaaa bbbc  ccdd dddd
+    HEXA    8    f     5    5
+    BINARY  1100 1111  0101 0101
+            aaaa bbbc  ccdd dddd
 
 Then ReadBits will return the following values:
 
