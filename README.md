@@ -16,4 +16,4 @@ an `io.Reader` and `io.Writer` view at the same time. This means you can also us
 `Writer.Write()` methods to read and write slices of bytes. These will give you best performance if
 the underlying `io.Reader` and `io.Writer` are aligned to a byte boundary (else all the individual bytes
 are assembled from / spread to multiple bytes). You can ensure byte boundary by calling the `Align()`
-method of `Reader` or `Writer`.
+method of `Reader` and `Writer`.
