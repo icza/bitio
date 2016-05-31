@@ -62,7 +62,7 @@ func NewWriter(out io.Writer) Writer {
 	return &writer{out: bout}
 }
 
-// Write implements io.writer.
+// Write implements io.Writer.
 func (w *writer) Write(p []byte) (n int, err error) {
 	// w.bits will be the same after writing 8 bits, so we don't need to update that.
 	if w.bits == 0 {
