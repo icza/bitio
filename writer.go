@@ -11,7 +11,7 @@ import (
 	"io"
 )
 
-// Bit writer interface.
+// Writer is the bit writer interface.
 // Must be closed in order to flush cached data.
 // If you can't or don't want to close it, flushing data can also be forced
 // by calling Align().

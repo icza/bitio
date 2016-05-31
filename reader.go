@@ -11,7 +11,7 @@ import (
 	"io"
 )
 
-// Bit reader interface.
+// Reader is the bit reader interface.
 type Reader interface {
 	// Reader is an io.Reader
 	io.Reader
