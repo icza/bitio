@@ -46,6 +46,7 @@ type writerAndByteWriter interface {
 	io.ByteWriter
 }
 
+// writer is the bit writer implementation.
 type writer struct {
 	out   writerAndByteWriter
 	cache byte // unwritten bits are stored here

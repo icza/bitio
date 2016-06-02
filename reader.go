@@ -38,7 +38,7 @@ type readerAndByteReader interface {
 	io.ByteReader
 }
 
-// Bit reader implementation.
+// reader is the bit reader implementation.
 type reader struct {
 	in    readerAndByteReader
 	cache byte // unread bits are stored here
