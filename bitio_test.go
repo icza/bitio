@@ -51,9 +51,8 @@ func TestReader(t *testing.T) {
 		t.Errorf("Got %v, want %v, error: %v", s, []byte{0x01, 0x02}, err)
 	}
 
-	if i, err := r.ReadBits(4); i != 0xf || err != nil {
-		t.Errorf("Got %x, want %x, error: %v", i, 0xf, err)
-	}
+	nExp = uint64(0xf)
+	check(r.ReadBits(4))
 
 	if n, err := r.Read(s); n != 2 || err != nil || !bytes.Equal(s, []byte{0x80, 0x8f}) {
 		t.Errorf("Got %v, want %v, error: %v", s, []byte{0x80, 0x8f}, err)
