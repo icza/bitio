@@ -191,6 +191,14 @@ func (e *errWriter) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
+type errCloser struct {
+	errWriter
+}
+
+func (e *errCloser) Close() error {
+	return errors.New("Obliged not to close!")
+}
+
 func TestWriterError(t *testing.T) {
 	w := NewWriter(&errWriter{1})
 	if err := w.WriteBool(true); err != nil {
@@ -217,7 +225,7 @@ func TestWriterError(t *testing.T) {
 	if err := w.WriteBits(0x00, 7); err != nil {
 		t.Error("Got error:", err)
 	}
-	if err := w.WriteBool(true); err == nil {
+	if err := w.WriteBool(false); err == nil {
 		t.Error("Got no error:", err)
 	}
 	
@@ -226,6 +234,11 @@ func TestWriterError(t *testing.T) {
 		t.Error("Got error:", err)
 	}
 	if _, err := w.Align(); err == nil {
+		t.Error("Got no error:", err)
+	}
+	
+	w = NewWriter(&errCloser{})
+	if err := w.Close(); err == nil {
 		t.Error("Got no error:", err)
 	}
 }
