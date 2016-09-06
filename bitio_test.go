@@ -2,6 +2,7 @@ package bitio
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"math/rand"
 	"testing"
@@ -153,7 +154,7 @@ func TestReaderEOF(t *testing.T) {
 	}
 }
 
-type nonByteReaderWriter struct{
+type nonByteReaderWriter struct {
 	io.Reader
 	io.Writer
 }
@@ -161,6 +162,41 @@ type nonByteReaderWriter struct{
 func TestNonByteReaderWriter(t *testing.T) {
 	NewReader(nonByteReaderWriter{})
 	NewWriter(nonByteReaderWriter{})
+}
+
+type errWriter struct {
+	limit int
+}
+
+func (e *errWriter) WriteByte(c byte) error {
+	if e.limit == 0 {
+		return errors.New("Can't write more!")
+	}
+	e.limit--
+	return nil
+}
+
+func (e *errWriter) Write(p []byte) (n int, err error) {
+	for i, v := range p {
+		if err := e.WriteByte(v); err != nil {
+			return i, err
+		}
+	}
+	return len(p), nil
+}
+
+func TestWriterError(t *testing.T) {
+	w := NewWriter(&errWriter{1})
+
+	if err := w.WriteBool(true); err != nil {
+		t.Error("Got error:", err)
+	}
+	if n, err := w.Write([]byte{0x01, 0x02}); n != 1 || err == nil {
+		t.Errorf("Got %x, want %x, error: %v", n, 2, err)
+	}
+	if err := w.Close(); err == nil {
+		t.Error("Got no error:", err)
+	}
 }
 
 func TestChain(t *testing.T) {
