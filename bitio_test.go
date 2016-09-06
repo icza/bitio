@@ -125,6 +125,24 @@ func TestReaderEOF(t *testing.T) {
 	if n, err := r.Read(make([]byte, 2)); n != 0 || err != io.EOF {
 		t.Errorf("Got %v, want %v", err, io.EOF)
 	}
+	
+	r = NewReader(bytes.NewBuffer([]byte{0x01}))
+	if _, err := r.ReadBits(17); err != io.EOF {
+		t.Errorf("Got %v, want %v", err, io.EOF)
+	}
+	
+	// Byte spreading byte boundary (readUnalignedByte)
+	r = NewReader(bytes.NewBuffer([]byte{0xc1, 0x01}))
+	if b, err := r.ReadBool(); !b || err != nil {
+		t.Errorf("Got %v, want %v, error: %v", b, false, err)
+	}
+	if b, err := r.ReadByte(); b != 0x82 || err != nil {
+		t.Errorf("Got %x, want %x, error: %v", b, 0x82, err)
+	}
+	// readUnalignedByte resulting in EOF
+	if _, err := r.ReadByte(); err != io.EOF {
+		t.Errorf("Got %v, want %v", err, io.EOF)
+	}
 }
 
 func TestChain(t *testing.T) {
