@@ -92,10 +92,9 @@ func (r *reader) ReadBits(n byte) (u uint64, err error) {
 		for n >= 8 {
 			if b, err := r.in.ReadByte(); err != nil {
 				return 0, err
-			} else {
-				u = u<<8 + uint64(b)
-				n -= 8
 			}
+			u = u<<8 + uint64(b)
+			n -= 8
 		}
 		// Read last fraction, if any
 		if n > 0 {
