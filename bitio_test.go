@@ -14,24 +14,26 @@ func TestReader(t *testing.T) {
 
 	r := NewReader(bytes.NewBuffer(data))
 
-	if b, err := r.ReadByte(); b != 3 || err != nil {
-		t.Errorf("Got %x, want %x, error: %v", b, 3, err)
-	}
-	if i, err := r.ReadBits(8); i != 255 || err != nil {
-		t.Errorf("Got %x, want %x, error: %v", i, 255, err)
-	}
-
-	if i, err := r.ReadBits(4); i != 0xc || err != nil {
-		t.Errorf("Got %x, want %x, error: %v", i, 0xc, err)
+	var nExp interface{}
+	check := func(n interface{}, err error) {
+		if n != nExp || err != nil {
+			t.Errorf("Got %x, want %x, error: %v", n, nExp, err)
+		}
 	}
 
-	if i, err := r.ReadBits(8); i != 0xc1 || err != nil {
-		t.Errorf("Got %x, want %x, error: %v", i, 0xc1, err)
-	}
+	nExp = byte(3)
+	check(r.ReadByte())
+	nExp = uint64(255)
+	check(r.ReadBits(8))
 
-	if i, err := r.ReadBits(20); i != 0xabcde || err != nil {
-		t.Errorf("Got %x, want %x, error: %v", i, 0xabcde, err)
-	}
+	nExp = uint64(0xc)
+	check(r.ReadBits(4))
+
+	nExp = uint64(0xc1)
+	check(r.ReadBits(8))
+
+	nExp = uint64(0xabcde)
+	check(r.ReadBits(20))
 
 	if b, err := r.ReadBool(); !b || err != nil {
 		t.Errorf("Got %v, want %v, error: %v", b, false, err)
@@ -74,26 +76,26 @@ func TestWriter(t *testing.T) {
 	errs = append(errs, w.WriteBits(0x01, 1))
 	errs = append(errs, w.WriteBits(0x1248f, 20))
 
-	var n_exp interface{}
+	var nExp interface{}
 	check := func(n interface{}, err error) {
-		if n != n_exp || err != nil {
-			t.Errorf("Got %x, want %x, error: %v", n, n_exp, err)
+		if n != nExp || err != nil {
+			t.Errorf("Got %x, want %x, error: %v", n, nExp, err)
 		}
 	}
-	
-	n_exp = byte(3)
+
+	nExp = byte(3)
 	check(w.Align())
 
-	n_exp = int(2)
+	nExp = int(2)
 	check(w.Write([]byte{0x01, 0x02}))
 
 	errs = append(errs, w.WriteBits(0x0f, 4))
 
 	check(w.Write([]byte{0x80, 0x8f}))
 
-	n_exp = byte(4)
+	nExp = byte(4)
 	check(w.Align())
-	n_exp = byte(0)
+	nExp = byte(0)
 	check(w.Align())
 	if err := w.WriteBits(0x01, 1); err != nil {
 		t.Error("Got error:", err)
