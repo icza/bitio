@@ -74,26 +74,27 @@ func TestWriter(t *testing.T) {
 	errs = append(errs, w.WriteBits(0x01, 1))
 	errs = append(errs, w.WriteBits(0x1248f, 20))
 
-	if n, err := w.Align(); n != 3 || err != nil {
-		t.Errorf("Got %x, want %x, error: %v", n, 3, err)
+	var n_exp interface{}
+	check := func(n interface{}, err error) {
+		if n != n_exp || err != nil {
+			t.Errorf("Got %x, want %x, error: %v", n, n_exp, err)
+		}
 	}
+	
+	n_exp = byte(3)
+	check(w.Align())
 
-	if n, err := w.Write([]byte{0x01, 0x02}); n != 2 || err != nil {
-		t.Errorf("Got %x, want %x, error: %v", n, 2, err)
-	}
+	n_exp = int(2)
+	check(w.Write([]byte{0x01, 0x02}))
 
 	errs = append(errs, w.WriteBits(0x0f, 4))
 
-	if n, err := w.Write([]byte{0x80, 0x8f}); n != 2 || err != nil {
-		t.Errorf("Got %x, want %x, error: %v", n, 2, err)
-	}
+	check(w.Write([]byte{0x80, 0x8f}))
 
-	if n, err := w.Align(); n != 4 || err != nil {
-		t.Errorf("Got %x, want %x, error: %v", n, 4, err)
-	}
-	if n, err := w.Align(); n != 0 || err != nil {
-		t.Errorf("Got %x, want %x, error: %v", n, 0, err)
-	}
+	n_exp = byte(4)
+	check(w.Align())
+	n_exp = byte(0)
+	check(w.Align())
 	if err := w.WriteBits(0x01, 1); err != nil {
 		t.Error("Got error:", err)
 	}
