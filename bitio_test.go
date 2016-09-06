@@ -125,12 +125,12 @@ func TestReaderEOF(t *testing.T) {
 	if n, err := r.Read(make([]byte, 2)); n != 0 || err != io.EOF {
 		t.Errorf("Got %v, want %v", err, io.EOF)
 	}
-	
+
 	r = NewReader(bytes.NewBuffer([]byte{0x01}))
 	if _, err := r.ReadBits(17); err != io.EOF {
 		t.Errorf("Got %v, want %v", err, io.EOF)
 	}
-	
+
 	// Byte spreading byte boundary (readUnalignedByte)
 	r = NewReader(bytes.NewBuffer([]byte{0xc1, 0x01}))
 	if b, err := r.ReadBool(); !b || err != nil {
@@ -143,6 +143,24 @@ func TestReaderEOF(t *testing.T) {
 	if _, err := r.ReadByte(); err != io.EOF {
 		t.Errorf("Got %v, want %v", err, io.EOF)
 	}
+
+	r = NewReader(bytes.NewBuffer([]byte{0xc1, 0x01}))
+	if b, err := r.ReadBool(); !b || err != nil {
+		t.Errorf("Got %v, want %v, error: %v", b, false, err)
+	}
+	if n, err := r.Read(make([]byte, 2)); n != 1 || err != io.EOF {
+		t.Errorf("Got %v, want %v", err, io.EOF)
+	}
+}
+
+type nonByteReaderWriter struct{
+	io.Reader
+	io.Writer
+}
+
+func TestNonByteReaderWriter(t *testing.T) {
+	NewReader(nonByteReaderWriter{})
+	NewWriter(nonByteReaderWriter{})
 }
 
 func TestChain(t *testing.T) {
