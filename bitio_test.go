@@ -63,7 +63,7 @@ func TestWriter(t *testing.T) {
 
 	w := NewWriter(b)
 
-	expected := []byte{0xc1, 0x7f, 0xac, 0x89, 0x24, 0x78, 0x01, 0x02, 0xf8, 0x08, 0xf0}
+	expected := []byte{0xc1, 0x7f, 0xac, 0x89, 0x24, 0x78, 0x01, 0x02, 0xf8, 0x08, 0xf0, 0xff, 0x80}
 
 	errs := []error{}
 	errs = append(errs, w.WriteByte(0xc1))
@@ -93,6 +93,12 @@ func TestWriter(t *testing.T) {
 	}
 	if n, err := w.Align(); n != 0 || err != nil {
 		t.Errorf("Got %x, want %x, error: %v", n, 0, err)
+	}
+	if err := w.WriteBits(0x01, 1); err != nil {
+		t.Error("Got error:", err)
+	}
+	if err := w.WriteByte(0xff); err != nil {
+		t.Error("Got error:", err)
 	}
 
 	errs = append(errs, w.Close())
@@ -187,7 +193,6 @@ func (e *errWriter) Write(p []byte) (n int, err error) {
 
 func TestWriterError(t *testing.T) {
 	w := NewWriter(&errWriter{1})
-
 	if err := w.WriteBool(true); err != nil {
 		t.Error("Got error:", err)
 	}
@@ -195,6 +200,32 @@ func TestWriterError(t *testing.T) {
 		t.Errorf("Got %x, want %x, error: %v", n, 2, err)
 	}
 	if err := w.Close(); err == nil {
+		t.Error("Got no error:", err)
+	}
+	
+	w = NewWriter(&errWriter{0})
+	if err := w.WriteBits(0x00, 9); err == nil {
+		t.Error("Got no error:", err)
+	}
+	
+	w = NewWriter(&errWriter{1})
+	if err := w.WriteBits(0x00, 17); err == nil {
+		t.Error("Got no error:", err)
+	}
+
+	w = NewWriter(&errWriter{})
+	if err := w.WriteBits(0x00, 7); err != nil {
+		t.Error("Got error:", err)
+	}
+	if err := w.WriteBool(true); err == nil {
+		t.Error("Got no error:", err)
+	}
+	
+	w = NewWriter(&errWriter{})
+	if err := w.WriteBool(true); err != nil {
+		t.Error("Got error:", err)
+	}
+	if _, err := w.Align(); err == nil {
 		t.Error("Got no error:", err)
 	}
 }
