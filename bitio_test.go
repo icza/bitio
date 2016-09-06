@@ -132,8 +132,10 @@ func TestReaderEOF(t *testing.T) {
 	if n, err := r.Read(make([]byte, 2)); n != 0 || err != io.EOF {
 		t.Errorf("Got %v, want %v", err, io.EOF)
 	}
+}
 
-	r = NewReader(bytes.NewBuffer([]byte{0x01}))
+func TestReaderEOF2(t *testing.T) {
+	r := NewReader(bytes.NewBuffer([]byte{0x01}))
 	if _, err := r.ReadBits(17); err != io.EOF {
 		t.Errorf("Got %v, want %v", err, io.EOF)
 	}
@@ -210,12 +212,12 @@ func TestWriterError(t *testing.T) {
 	if err := w.Close(); err == nil {
 		t.Error("Got no error:", err)
 	}
-	
+
 	w = NewWriter(&errWriter{0})
 	if err := w.WriteBits(0x00, 9); err == nil {
 		t.Error("Got no error:", err)
 	}
-	
+
 	w = NewWriter(&errWriter{1})
 	if err := w.WriteBits(0x00, 17); err == nil {
 		t.Error("Got no error:", err)
@@ -228,7 +230,7 @@ func TestWriterError(t *testing.T) {
 	if err := w.WriteBool(false); err == nil {
 		t.Error("Got no error:", err)
 	}
-	
+
 	w = NewWriter(&errWriter{})
 	if err := w.WriteBool(true); err != nil {
 		t.Error("Got error:", err)
@@ -236,7 +238,7 @@ func TestWriterError(t *testing.T) {
 	if _, err := w.Align(); err == nil {
 		t.Error("Got no error:", err)
 	}
-	
+
 	w = NewWriter(&errCloser{})
 	if err := w.Close(); err == nil {
 		t.Error("Got no error:", err)
