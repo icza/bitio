@@ -3,6 +3,7 @@ package bitio
 import (
 	"bytes"
 	"errors"
+	"github.com/icza/mighty"
 	"io"
 	"math/rand"
 	"testing"
@@ -14,49 +15,44 @@ func TestReader(t *testing.T) {
 
 	r := NewReader(bytes.NewBuffer(data))
 
-	var nExp interface{}
-	check := func(n interface{}, err error) {
-		if n != nExp || err != nil {
-			t.Errorf("Got %x, want %x, error: %v", n, nExp, err)
-		}
+	eq := mighty.Eq(t)
+	var exp interface{}
+	check := func(got interface{}, err error) {
+		eq(exp, got, err)
 	}
 
-	nExp = byte(3)
+	exp = byte(3)
 	check(r.ReadByte())
-	nExp = uint64(255)
+	exp = uint64(255)
 	check(r.ReadBits(8))
 
-	nExp = uint64(0xc)
+	exp = uint64(0xc)
 	check(r.ReadBits(4))
 
-	nExp = uint64(0xc1)
+	exp = uint64(0xc1)
 	check(r.ReadBits(8))
 
-	nExp = uint64(0xabcde)
+	exp = uint64(0xabcde)
 	check(r.ReadBits(20))
 
-	if b, err := r.ReadBool(); !b || err != nil {
-		t.Errorf("Got %v, want %v, error: %v", b, false, err)
-	}
-	if b, err := r.ReadBool(); b || err != nil {
-		t.Errorf("Got %v, want %v, error: %v", b, true, err)
-	}
+	exp = true
+	check(r.ReadBool())
+	exp = false
+	check(r.ReadBool())
 
-	if n := r.Align(); n != 6 {
-		t.Errorf("Got %v, want %v", n, 6)
-	}
+	eq(byte(6), r.Align())
 
 	s := make([]byte, 2)
-	if n, err := r.Read(s); n != 2 || err != nil || !bytes.Equal(s, []byte{0x01, 0x02}) {
-		t.Errorf("Got %v, want %v, error: %v", s, []byte{0x01, 0x02}, err)
-	}
+	exp = 2
+	check(r.Read(s))
+	eq(true, bytes.Equal(s, []byte{0x01, 0x02}))
 
-	nExp = uint64(0xf)
+	exp = uint64(0xf)
 	check(r.ReadBits(4))
 
-	if n, err := r.Read(s); n != 2 || err != nil || !bytes.Equal(s, []byte{0x80, 0x8f}) {
-		t.Errorf("Got %v, want %v, error: %v", s, []byte{0x80, 0x8f}, err)
-	}
+	exp = 2
+	check(r.Read(s))
+	eq(true, bytes.Equal(s, []byte{0x80, 0x8f}))
 }
 
 func TestWriter(t *testing.T) {
@@ -66,102 +62,92 @@ func TestWriter(t *testing.T) {
 
 	expected := []byte{0xc1, 0x7f, 0xac, 0x89, 0x24, 0x78, 0x01, 0x02, 0xf8, 0x08, 0xf0, 0xff, 0x80}
 
-	errs := []error{}
-	errs = append(errs, w.WriteByte(0xc1))
-	errs = append(errs, w.WriteBool(false))
-	errs = append(errs, w.WriteBits(0x3f, 6))
-	errs = append(errs, w.WriteBool(true))
-	errs = append(errs, w.WriteByte(0xac))
-	errs = append(errs, w.WriteBits(0x01, 1))
-	errs = append(errs, w.WriteBits(0x1248f, 20))
+	eq := mighty.Eq(t)
 
-	var nExp interface{}
-	check := func(n interface{}, err error) {
-		if n != nExp || err != nil {
-			t.Errorf("Got %x, want %x, error: %v", n, nExp, err)
-		}
+	eq(nil, w.WriteByte(0xc1))
+	eq(nil, w.WriteBool(false))
+	eq(nil, w.WriteBits(0x3f, 6))
+	eq(nil, w.WriteBool(true))
+	eq(nil, w.WriteByte(0xac))
+	eq(nil, w.WriteBits(0x01, 1))
+	eq(nil, w.WriteBits(0x1248f, 20))
+
+	var exp interface{}
+	check := func(got interface{}, err error) {
+		eq(exp, got, err)
 	}
 
-	nExp = byte(3)
+	exp = byte(3)
 	check(w.Align())
 
-	nExp = int(2)
+	exp = int(2)
 	check(w.Write([]byte{0x01, 0x02}))
 
-	errs = append(errs, w.WriteBits(0x0f, 4))
+	eq(nil, w.WriteBits(0x0f, 4))
 
 	check(w.Write([]byte{0x80, 0x8f}))
 
-	nExp = byte(4)
+	exp = byte(4)
 	check(w.Align())
-	nExp = byte(0)
+	exp = byte(0)
 	check(w.Align())
-	if err := w.WriteBits(0x01, 1); err != nil {
-		t.Error("Got error:", err)
-	}
-	if err := w.WriteByte(0xff); err != nil {
-		t.Error("Got error:", err)
-	}
+	eq(nil, w.WriteBits(0x01, 1))
+	eq(nil, w.WriteByte(0xff))
 
-	errs = append(errs, w.Close())
+	eq(nil, w.Close())
 
-	for _, v := range errs {
-		if v != nil {
-			t.Error("Got error:", v)
-		}
-	}
-
-	if !bytes.Equal(b.Bytes(), expected) {
-		t.Errorf("Got: %x, want: %x", b.Bytes(), expected)
-	}
+	eq(true, bytes.Equal(b.Bytes(), expected))
 }
 
 func TestReaderEOF(t *testing.T) {
+	eq := mighty.Eq(t)
+
 	r := NewReader(bytes.NewBuffer([]byte{0x01}))
 
-	if b, err := r.ReadByte(); b != 1 || err != nil {
-		t.Errorf("Got %x, want %x, error: %v", b, 1, err)
-	}
-	if _, err := r.ReadByte(); err != io.EOF {
-		t.Errorf("Got %v, want %v", err, io.EOF)
-	}
-	if _, err := r.ReadBool(); err != io.EOF {
-		t.Errorf("Got %v, want %v", err, io.EOF)
-	}
-	if _, err := r.ReadBits(1); err != io.EOF {
-		t.Errorf("Got %v, want %v", err, io.EOF)
-	}
-	if n, err := r.Read(make([]byte, 2)); n != 0 || err != io.EOF {
-		t.Errorf("Got %v, want %v", err, io.EOF)
-	}
+	b, err := r.ReadByte()
+	eq(byte(1), b)
+	eq(nil, err)
+	_, err = r.ReadByte()
+	eq(io.EOF, err)
+	_, err = r.ReadBool()
+	eq(io.EOF, err)
+	_, err = r.ReadBits(1)
+	eq(io.EOF, err)
+	n, err := r.Read(make([]byte, 2))
+	eq(0, n)
+	eq(io.EOF, err)
 }
 
 func TestReaderEOF2(t *testing.T) {
-	r := NewReader(bytes.NewBuffer([]byte{0x01}))
-	if _, err := r.ReadBits(17); err != io.EOF {
-		t.Errorf("Got %v, want %v", err, io.EOF)
+	eq := mighty.Eq(t)
+
+	var exp interface{}
+	var err error
+
+	check := func(got interface{}, err error) {
+		eq(exp, got, err)
 	}
+
+	r := NewReader(bytes.NewBuffer([]byte{0x01}))
+	_, err = r.ReadBits(17)
+	eq(io.EOF, err)
 
 	// Byte spreading byte boundary (readUnalignedByte)
 	r = NewReader(bytes.NewBuffer([]byte{0xc1, 0x01}))
-	if b, err := r.ReadBool(); !b || err != nil {
-		t.Errorf("Got %v, want %v, error: %v", b, false, err)
-	}
-	if b, err := r.ReadByte(); b != 0x82 || err != nil {
-		t.Errorf("Got %x, want %x, error: %v", b, 0x82, err)
-	}
+	exp = true
+	check(r.ReadBool())
+	exp = byte(0x82)
+	check(r.ReadByte())
 	// readUnalignedByte resulting in EOF
-	if _, err := r.ReadByte(); err != io.EOF {
-		t.Errorf("Got %v, want %v", err, io.EOF)
-	}
+	_, err = r.ReadByte()
+	eq(io.EOF, err)
 
 	r = NewReader(bytes.NewBuffer([]byte{0xc1, 0x01}))
-	if b, err := r.ReadBool(); !b || err != nil {
-		t.Errorf("Got %v, want %v, error: %v", b, false, err)
-	}
-	if n, err := r.Read(make([]byte, 2)); n != 1 || err != io.EOF {
-		t.Errorf("Got %v, want %v", err, io.EOF)
-	}
+	exp = true
+	check(r.ReadBool())
+	got, err := r.Read(make([]byte, 2))
+	eq(1, got)
+	eq(io.EOF, err)
 }
 
 type nonByteReaderWriter struct {
@@ -204,50 +190,37 @@ func (e *errCloser) Close() error {
 }
 
 func TestWriterError(t *testing.T) {
+	eq, neq := mighty.EqNeq(t)
+
 	w := NewWriter(&errWriter{1})
-	if err := w.WriteBool(true); err != nil {
-		t.Error("Got error:", err)
-	}
-	if n, err := w.Write([]byte{0x01, 0x02}); n != 1 || err == nil {
-		t.Errorf("Got %x, want %x, error: %v", n, 2, err)
-	}
-	if err := w.Close(); err == nil {
-		t.Error("Got no error:", err)
-	}
+	eq(nil, w.WriteBool(true))
+	got, err := w.Write([]byte{0x01, 0x02})
+	eq(1, got)
+	neq(nil, err)
+	neq(nil, w.Close())
 
 	w = NewWriter(&errWriter{0})
-	if err := w.WriteBits(0x00, 9); err == nil {
-		t.Error("Got no error:", err)
-	}
+	neq(nil, w.WriteBits(0x00, 9))
 
 	w = NewWriter(&errWriter{1})
-	if err := w.WriteBits(0x00, 17); err == nil {
-		t.Error("Got no error:", err)
-	}
+	neq(nil, w.WriteBits(0x00, 17))
 
 	w = NewWriter(&errWriter{})
-	if err := w.WriteBits(0x00, 7); err != nil {
-		t.Error("Got error:", err)
-	}
-	if err := w.WriteBool(false); err == nil {
-		t.Error("Got no error:", err)
-	}
+	eq(nil, w.WriteBits(0x00, 7))
+	neq(nil, w.WriteBool(false))
 
 	w = NewWriter(&errWriter{})
-	if err := w.WriteBool(true); err != nil {
-		t.Error("Got error:", err)
-	}
-	if _, err := w.Align(); err == nil {
-		t.Error("Got no error:", err)
-	}
+	eq(nil, w.WriteBool(true))
+	_, err = w.Align()
+	neq(nil, err)
 
 	w = NewWriter(&errCloser{})
-	if err := w.Close(); err == nil {
-		t.Error("Got no error:", err)
-	}
+	neq(nil, w.Close())
 }
 
 func TestChain(t *testing.T) {
+	eq := mighty.Eq(t)
+
 	b := &bytes.Buffer{}
 	w := NewWriter(b)
 
@@ -263,16 +236,14 @@ func TestChain(t *testing.T) {
 		expected[i] &= uint64(1)<<bits[i] - 1
 		w.WriteBits(expected[i], bits[i])
 	}
-	if err := w.Close(); err != nil {
-		t.Error("Got error:", err)
-	}
+
+	eq(nil, w.Close())
 
 	r := NewReader(bytes.NewBuffer(b.Bytes()))
 
 	// Reading (verifying)
 	for i, v := range expected {
-		if u, err := r.ReadBits(bits[i]); u != v || err != nil {
-			t.Errorf("Idx: %d, Got: %x, want: %x, bits: %d, error: %v", i, u, v, bits[i], err)
-		}
+		u, err := r.ReadBits(bits[i])
+		eq(v, u, err)
 	}
 }
