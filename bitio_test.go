@@ -14,44 +14,29 @@ func TestReader(t *testing.T) {
 	data := []byte{3, 255, 0xcc, 0x1a, 0xbc, 0xde, 0x80, 0x01, 0x02, 0xf8, 0x08, 0xf0}
 
 	r := NewReader(bytes.NewBuffer(data))
+	eq, expEq := mighty.Eq(t), mighty.ExpEq(t)
 
-	eq := mighty.Eq(t)
-	var exp interface{}
-	check := func(got interface{}, err error) {
-		eq(exp, got, err)
-	}
+	expEq(byte(3))(r.ReadByte())
+	expEq(uint64(255))(r.ReadBits(8))
 
-	exp = byte(3)
-	check(r.ReadByte())
-	exp = uint64(255)
-	check(r.ReadBits(8))
+	expEq(uint64(0xc))(r.ReadBits(4))
 
-	exp = uint64(0xc)
-	check(r.ReadBits(4))
+	expEq(uint64(0xc1))(r.ReadBits(8))
 
-	exp = uint64(0xc1)
-	check(r.ReadBits(8))
+	expEq(uint64(0xabcde))(r.ReadBits(20))
 
-	exp = uint64(0xabcde)
-	check(r.ReadBits(20))
-
-	exp = true
-	check(r.ReadBool())
-	exp = false
-	check(r.ReadBool())
+	expEq(true)(r.ReadBool())
+	expEq(false)(r.ReadBool())
 
 	eq(byte(6), r.Align())
 
 	s := make([]byte, 2)
-	exp = 2
-	check(r.Read(s))
+	expEq(2)(r.Read(s))
 	eq(true, bytes.Equal(s, []byte{0x01, 0x02}))
 
-	exp = uint64(0xf)
-	check(r.ReadBits(4))
+	expEq(uint64(0xf))(r.ReadBits(4))
 
-	exp = 2
-	check(r.Read(s))
+	expEq(2)(r.Read(s))
 	eq(true, bytes.Equal(s, []byte{0x80, 0x8f}))
 }
 
@@ -62,7 +47,7 @@ func TestWriter(t *testing.T) {
 
 	expected := []byte{0xc1, 0x7f, 0xac, 0x89, 0x24, 0x78, 0x01, 0x02, 0xf8, 0x08, 0xf0, 0xff, 0x80}
 
-	eq := mighty.Eq(t)
+	eq, expEq := mighty.Eq(t), mighty.ExpEq(t)
 
 	eq(nil, w.WriteByte(0xc1))
 	eq(nil, w.WriteBool(false))
@@ -72,25 +57,16 @@ func TestWriter(t *testing.T) {
 	eq(nil, w.WriteBits(0x01, 1))
 	eq(nil, w.WriteBits(0x1248f, 20))
 
-	var exp interface{}
-	check := func(got interface{}, err error) {
-		eq(exp, got, err)
-	}
+	expEq(byte(3))(w.Align())
 
-	exp = byte(3)
-	check(w.Align())
-
-	exp = int(2)
-	check(w.Write([]byte{0x01, 0x02}))
+	expEq(2)(w.Write([]byte{0x01, 0x02}))
 
 	eq(nil, w.WriteBits(0x0f, 4))
 
-	check(w.Write([]byte{0x80, 0x8f}))
+	expEq(2)(w.Write([]byte{0x80, 0x8f}))
 
-	exp = byte(4)
-	check(w.Align())
-	exp = byte(0)
-	check(w.Align())
+	expEq(byte(4))(w.Align())
+	expEq(byte(0))(w.Align())
 	eq(nil, w.WriteBits(0x01, 1))
 	eq(nil, w.WriteByte(0xff))
 
@@ -119,14 +95,9 @@ func TestReaderEOF(t *testing.T) {
 }
 
 func TestReaderEOF2(t *testing.T) {
-	eq := mighty.Eq(t)
+	eq, expEq := mighty.Eq(t), mighty.ExpEq(t)
 
-	var exp interface{}
 	var err error
-
-	check := func(got interface{}, err error) {
-		eq(exp, got, err)
-	}
 
 	r := NewReader(bytes.NewBuffer([]byte{0x01}))
 	_, err = r.ReadBits(17)
@@ -134,17 +105,14 @@ func TestReaderEOF2(t *testing.T) {
 
 	// Byte spreading byte boundary (readUnalignedByte)
 	r = NewReader(bytes.NewBuffer([]byte{0xc1, 0x01}))
-	exp = true
-	check(r.ReadBool())
-	exp = byte(0x82)
-	check(r.ReadByte())
+	expEq(true)(r.ReadBool())
+	expEq(byte(0x82))(r.ReadByte())
 	// readUnalignedByte resulting in EOF
 	_, err = r.ReadByte()
 	eq(io.EOF, err)
 
 	r = NewReader(bytes.NewBuffer([]byte{0xc1, 0x01}))
-	exp = true
-	check(r.ReadBool())
+	expEq(true)(r.ReadBool())
 	got, err := r.Read(make([]byte, 2))
 	eq(1, got)
 	eq(io.EOF, err)
@@ -219,7 +187,7 @@ func TestWriterError(t *testing.T) {
 }
 
 func TestChain(t *testing.T) {
-	eq := mighty.Eq(t)
+	eq, expEq := mighty.Eq(t), mighty.ExpEq(t)
 
 	b := &bytes.Buffer{}
 	w := NewWriter(b)
@@ -243,7 +211,6 @@ func TestChain(t *testing.T) {
 
 	// Reading (verifying)
 	for i, v := range expected {
-		u, err := r.ReadBits(bits[i])
-		eq(v, u, err)
+		expEq(v)(r.ReadBits(bits[i]))
 	}
 }
