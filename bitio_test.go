@@ -14,7 +14,7 @@ func TestReader(t *testing.T) {
 	data := []byte{3, 255, 0xcc, 0x1a, 0xbc, 0xde, 0x80, 0x01, 0x02, 0xf8, 0x08, 0xf0}
 
 	r := NewReader(bytes.NewBuffer(data))
-	eq, expEq := mighty.Eq(t), mighty.ExpEq(t)
+	eq, expEq := mighty.EqExpEq(t)
 
 	expEq(byte(3))(r.ReadByte())
 	expEq(uint64(255))(r.ReadBits(8))
@@ -47,7 +47,7 @@ func TestWriter(t *testing.T) {
 
 	expected := []byte{0xc1, 0x7f, 0xac, 0x89, 0x24, 0x78, 0x01, 0x02, 0xf8, 0x08, 0xf0, 0xff, 0x80}
 
-	eq, expEq := mighty.Eq(t), mighty.ExpEq(t)
+	eq, expEq := mighty.EqExpEq(t)
 
 	eq(nil, w.WriteByte(0xc1))
 	eq(nil, w.WriteBool(false))
@@ -95,7 +95,7 @@ func TestReaderEOF(t *testing.T) {
 }
 
 func TestReaderEOF2(t *testing.T) {
-	eq, expEq := mighty.Eq(t), mighty.ExpEq(t)
+	eq, expEq := mighty.EqExpEq(t)
 
 	var err error
 
