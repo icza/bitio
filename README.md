@@ -1,6 +1,9 @@
 # bitio
 
-[![GoDoc](https://godoc.org/github.com/icza/bitio?status.svg)](https://godoc.org/github.com/icza/bitio) [![Build Status](https://travis-ci.org/icza/bitio.svg?branch=master)](https://travis-ci.org/icza/bitio) [![Go Report Card](https://goreportcard.com/badge/github.com/icza/bitio)](https://goreportcard.com/report/github.com/icza/bitio) [![Code Coverage](https://gocover.io/_badge/github.com/icza/bitio?cnt=1)](https://gocover.io/github.com/icza/bitio)
+[![GoDoc](https://godoc.org/github.com/icza/bitio?status.svg)](https://godoc.org/github.com/icza/bitio)
+[![Build Status](https://travis-ci.org/icza/bitio.svg?branch=master)](https://travis-ci.org/icza/bitio)
+[![Go Report Card](https://goreportcard.com/badge/github.com/icza/bitio)](https://goreportcard.com/report/github.com/icza/bitio)
+[![codecov](https://codecov.io/gh/icza/bitio/branch/master/graph/badge.svg)](https://codecov.io/gh/icza/bitio)
 
 Package `bitio` provides a highly optimized bit-level `Reader` and `Writer` for Go.
 
