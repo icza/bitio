@@ -3,11 +3,12 @@ package bitio
 import (
 	"bytes"
 	"errors"
-	"github.com/icza/mighty"
 	"io"
 	"math/rand"
 	"testing"
 	"time"
+
+	"github.com/icza/mighty"
 )
 
 func TestReader(t *testing.T) {
@@ -134,7 +135,7 @@ type errWriter struct {
 
 func (e *errWriter) WriteByte(c byte) error {
 	if e.limit == 0 {
-		return errors.New("Can't write more!")
+		return errors.New("Can't write more")
 	}
 	e.limit--
 	return nil
@@ -154,7 +155,7 @@ type errCloser struct {
 }
 
 func (e *errCloser) Close() error {
-	return errors.New("Obliged not to close!")
+	return errors.New("Obliged not to close")
 }
 
 func TestWriterError(t *testing.T) {

@@ -90,9 +90,9 @@ func (r *reader) ReadBits(n byte) (u uint64, err error) {
 		}
 		// Read whole bytes
 		for n >= 8 {
-			b, err := r.in.ReadByte()
-			if err != nil {
-				return 0, err
+			b, err2 := r.in.ReadByte()
+			if err2 != nil {
+				return 0, err2
 			}
 			u = u<<8 + uint64(b)
 			n -= 8
