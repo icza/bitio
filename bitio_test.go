@@ -94,6 +94,18 @@ func TestReaderEOF(t *testing.T) {
 	eq(0, n)
 	eq(io.EOF, err)
 }
+func TestReaderUnalignedEOF(t *testing.T) {
+	eq := mighty.Eq(t)
+
+	r := NewReader(bytes.NewBuffer([]byte{0xFF}))
+
+	b, err := r.ReadBits(4)
+	eq(byte(15), byte(b))
+	eq(nil, err)
+	b, err = r.ReadBits(5)
+	eq(byte(15), byte(b))
+	eq(io.EOF, err)
+}
 
 func TestReaderEOF2(t *testing.T) {
 	eq, expEq := mighty.EqExpEq(t)
