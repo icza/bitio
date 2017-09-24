@@ -100,7 +100,7 @@ func (r *reader) ReadBits(n byte) (u uint64, err error) {
 		// Read last fraction, if any
 		if n > 0 {
 			if r.cache, err = r.in.ReadByte(); err != nil {
-				return 0, err
+				return u, err
 			}
 			shift := 8 - n
 			u = u<<n + uint64(r.cache>>shift)
