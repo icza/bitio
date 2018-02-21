@@ -48,19 +48,22 @@ type writerAndByteWriter interface {
 
 // writer is the bit writer implementation.
 type writer struct {
-	out   writerAndByteWriter
-	cache byte // unwritten bits are stored here
-	bits  byte // number of unwritten bits in cache
+	out       writerAndByteWriter
+	wrapperbw *bufio.Writer // wrapper bufio.Writer if the target does not implement io.ByteWriter
+	cache     byte          // unwritten bits are stored here
+	bits      byte          // number of unwritten bits in cache
 }
 
 // NewWriter returns a new Writer using the specified io.Writer as the output.
 func NewWriter(out io.Writer) Writer {
-	var bout writerAndByteWriter
-	bout, ok := out.(writerAndByteWriter)
+	w := &writer{}
+	var ok bool
+	w.out, ok = out.(writerAndByteWriter)
 	if !ok {
-		bout = bufio.NewWriter(out)
+		w.wrapperbw = bufio.NewWriter(out)
+		w.out = w.wrapperbw
 	}
-	return &writer{out: bout}
+	return w
 }
 
 // Write implements io.Writer.
@@ -166,26 +169,25 @@ func (w *writer) WriteBool(b bool) (err error) {
 }
 
 func (w *writer) Align() (skipped byte, err error) {
-	if w.bits == 0 {
-		return
-	}
-	if err = w.out.WriteByte(w.cache); err != nil {
-		return
-	}
+	if w.bits > 0 {
+		if err = w.out.WriteByte(w.cache); err != nil {
+			return
+		}
 
-	skipped = 8 - w.bits
-	w.cache, w.bits = 0, 0
+		skipped = 8 - w.bits
+		w.cache, w.bits = 0, 0
+	}
+	if w.wrapperbw != nil {
+		err = w.wrapperbw.Flush()
+	}
 	return
 }
 
 // Close implements io.Closer.
 func (w *writer) Close() (err error) {
-	if w.bits > 0 {
-		err = w.out.WriteByte(w.cache)
-		if err != nil {
-			return
-		}
-		w.cache, w.bits = 0, 0
+	// Make sure cached bits are flushed:
+	if _, err = w.Align(); err != nil {
+		return
 	}
 
 	if c, ok := w.out.(io.Closer); ok {
