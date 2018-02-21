@@ -41,39 +41,67 @@ func TestReader(t *testing.T) {
 	eq(true, bytes.Equal(s, []byte{0x80, 0x8f}))
 }
 
+// testWriter that does not implement io.ByteWriter so we can test the
+// behaviour of Writer when it creates an internal bufio.Writer.
+type testWriter struct {
+	b *bytes.Buffer
+}
+
+func (w *testWriter) Write(p []byte) (n int, err error) {
+	return w.b.Write(p)
+}
+
+func (w *testWriter) Bytes() []byte {
+	return w.b.Bytes()
+}
+
 func TestWriter(t *testing.T) {
-	b := &bytes.Buffer{}
+	for i := 0; i < 2; i++ {
+		// 2 rounds, first use something that implements io.ByteWriter (*bytes.Buffer),
+		// next testWriter which does not.
+		var b interface {
+			io.Writer
+			Bytes() []byte
+		}
+		{
+			buf := &bytes.Buffer{}
+			b = buf
+			if i > 0 {
+				b = &testWriter{b: buf}
+			}
+		}
 
-	w := NewWriter(b)
+		w := NewWriter(b)
 
-	expected := []byte{0xc1, 0x7f, 0xac, 0x89, 0x24, 0x78, 0x01, 0x02, 0xf8, 0x08, 0xf0, 0xff, 0x80}
+		expected := []byte{0xc1, 0x7f, 0xac, 0x89, 0x24, 0x78, 0x01, 0x02, 0xf8, 0x08, 0xf0, 0xff, 0x80}
 
-	eq, expEq := mighty.EqExpEq(t)
+		eq, expEq := mighty.EqExpEq(t)
 
-	eq(nil, w.WriteByte(0xc1))
-	eq(nil, w.WriteBool(false))
-	eq(nil, w.WriteBits(0x3f, 6))
-	eq(nil, w.WriteBool(true))
-	eq(nil, w.WriteByte(0xac))
-	eq(nil, w.WriteBits(0x01, 1))
-	eq(nil, w.WriteBits(0x1248f, 20))
+		eq(nil, w.WriteByte(0xc1))
+		eq(nil, w.WriteBool(false))
+		eq(nil, w.WriteBits(0x3f, 6))
+		eq(nil, w.WriteBool(true))
+		eq(nil, w.WriteByte(0xac))
+		eq(nil, w.WriteBits(0x01, 1))
+		eq(nil, w.WriteBits(0x1248f, 20))
 
-	expEq(byte(3))(w.Align())
+		expEq(byte(3))(w.Align())
 
-	expEq(2)(w.Write([]byte{0x01, 0x02}))
+		expEq(2)(w.Write([]byte{0x01, 0x02}))
 
-	eq(nil, w.WriteBits(0x0f, 4))
+		eq(nil, w.WriteBits(0x0f, 4))
 
-	expEq(2)(w.Write([]byte{0x80, 0x8f}))
+		expEq(2)(w.Write([]byte{0x80, 0x8f}))
 
-	expEq(byte(4))(w.Align())
-	expEq(byte(0))(w.Align())
-	eq(nil, w.WriteBits(0x01, 1))
-	eq(nil, w.WriteByte(0xff))
+		expEq(byte(4))(w.Align())
+		expEq(byte(0))(w.Align())
+		eq(nil, w.WriteBits(0x01, 1))
+		eq(nil, w.WriteByte(0xff))
 
-	eq(nil, w.Close())
+		eq(nil, w.Close())
 
-	eq(true, bytes.Equal(b.Bytes(), expected))
+		eq(true, bytes.Equal(b.Bytes(), expected))
+	}
 }
 
 func TestReaderEOF(t *testing.T) {
