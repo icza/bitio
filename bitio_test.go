@@ -150,14 +150,6 @@ func (e *errWriter) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
-type errCloser struct {
-	errWriter
-}
-
-func (e *errCloser) Close() error {
-	return errors.New("Obliged not to close")
-}
-
 func TestWriterError(t *testing.T) {
 	eq, neq := mighty.EqNeq(t)
 
@@ -182,9 +174,6 @@ func TestWriterError(t *testing.T) {
 	eq(nil, w.WriteBool(true))
 	_, err = w.Align()
 	neq(nil, err)
-
-	w = NewWriter(&errCloser{})
-	neq(nil, w.Close())
 }
 
 func TestChain(t *testing.T) {

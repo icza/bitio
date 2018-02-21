@@ -18,8 +18,7 @@ import (
 type Writer interface {
 	// Writer is an io.Writer and io.Closer.
 	// Close closes the bit writer, writes out cached bits.
-	// If the underlying io.Writer implements io.Closer,
-	// it will be closed after writing out cached bits.
+	// It does not close the underlying io.Writer.
 	io.WriteCloser
 
 	// Writer is also an io.ByteWriter.
@@ -188,13 +187,6 @@ func (w *writer) Close() (err error) {
 	// Make sure cached bits are flushed:
 	if _, err = w.Align(); err != nil {
 		return
-	}
-
-	if c, ok := w.out.(io.Closer); ok {
-		err = c.Close()
-		if err != nil {
-			return
-		}
 	}
 
 	return nil
