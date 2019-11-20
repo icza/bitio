@@ -41,6 +41,38 @@ func TestReader(t *testing.T) {
 	eq(true, bytes.Equal(s, []byte{0x80, 0x8f}))
 }
 
+func TestReaderTry(t *testing.T) {
+	data := []byte{3, 255, 0xcc, 0x1a, 0xbc, 0xde, 0x80, 0x01, 0x02, 0xf8, 0x08, 0xf0}
+
+	r := NewReader(bytes.NewBuffer(data))
+	eq := mighty.Eq(t)
+
+	eq(byte(3), r.TryReadByte())
+	eq(uint64(255), r.TryReadBits(8))
+
+	eq(uint64(0xc), r.TryReadBits(4))
+
+	eq(uint64(0xc1), r.TryReadBits(8))
+
+	eq(uint64(0xabcde), r.TryReadBits(20))
+
+	eq(true, r.TryReadBool())
+	eq(false, r.TryReadBool())
+
+	eq(byte(6), r.Align())
+
+	s := make([]byte, 2)
+	eq(2, r.TryRead(s))
+	eq(true, bytes.Equal(s, []byte{0x01, 0x02}))
+
+	eq(uint64(0xf), r.TryReadBits(4))
+
+	eq(2, r.TryRead(s))
+	eq(true, bytes.Equal(s, []byte{0x80, 0x8f}))
+
+	eq(nil, r.TryError)
+}
+
 // testWriter that does not implement io.ByteWriter so we can test the
 // behaviour of Writer when it creates an internal bufio.Writer.
 type testWriter struct {
@@ -123,6 +155,25 @@ func TestReaderEOF(t *testing.T) {
 	eq(io.EOF, err)
 }
 
+func TestReaderTryEOF(t *testing.T) {
+	eq := mighty.Eq(t)
+
+	r := NewReader(bytes.NewBuffer([]byte{0x01}))
+
+	b := r.TryReadByte()
+	eq(byte(1), b)
+	eq(nil, r.TryError)
+	_ = r.TryReadByte()
+	eq(io.EOF, r.TryError)
+	_ = r.TryReadBool()
+	eq(io.EOF, r.TryError)
+	_ = r.TryReadBits(1)
+	eq(io.EOF, r.TryError)
+	n := r.TryRead(make([]byte, 2))
+	eq(0, n)
+	eq(io.EOF, r.TryError)
+}
+
 func TestReaderEOF2(t *testing.T) {
 	eq, expEq := mighty.EqExpEq(t)
 
@@ -145,6 +196,30 @@ func TestReaderEOF2(t *testing.T) {
 	got, err := r.Read(make([]byte, 2))
 	eq(1, got)
 	eq(io.EOF, err)
+}
+
+func TestReaderTryEOF2(t *testing.T) {
+	eq := mighty.Eq(t)
+
+	r := NewReader(bytes.NewBuffer([]byte{0x01}))
+	_ = r.TryReadBits(17)
+	eq(io.EOF, r.TryError)
+
+	// Byte spreading byte boundary (readUnalignedByte)
+	r = NewReader(bytes.NewBuffer([]byte{0xc1, 0x01}))
+	eq(true, r.TryReadBool())
+	eq(nil, r.TryError)
+	eq(byte(0x82), r.TryReadByte())
+	eq(nil, r.TryError)
+	// readUnalignedByte resulting in EOF
+	_ = r.TryReadByte()
+	eq(io.EOF, r.TryError)
+
+	r = NewReader(bytes.NewBuffer([]byte{0xc1, 0x01}))
+	eq(true, r.TryReadBool())
+	got := r.TryRead(make([]byte, 2))
+	eq(1, got)
+	eq(io.EOF, r.TryError)
 }
 
 type nonByteReaderWriter struct {

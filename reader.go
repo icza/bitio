@@ -24,6 +24,9 @@ type Reader struct {
 	in    readerAndByteReader
 	cache byte // unread bits are stored here
 	bits  byte // number of unread bits in cache
+
+	// TryError holds the first error occurred in TryXXX() methods.
+	TryError error
 }
 
 // NewReader returns a new Reader using the specified io.Reader as the input (source).
@@ -153,5 +156,49 @@ func (r *Reader) ReadBool() (b bool, err error) {
 func (r *Reader) Align() (skipped byte) {
 	skipped = r.bits
 	r.bits = 0 // no need to clear cache, will be overwritten on next read
+	return
+}
+
+// TryRead tries to read up to len(p) bytes (8 * len(p) bits) from the underlying reader.
+//
+// If there was a previous TryError, it does nothing. Else it calls Read(),
+// returns the data it provides and stores the error in the TryError field.
+func (r *Reader) TryRead(p []byte) (n int) {
+	if r.TryError == nil {
+		n, r.TryError = r.Read(p)
+	}
+	return
+}
+
+// TryReadBits tries to read n bits.
+//
+// If there was a previous TryError, it does nothing. Else it calls ReadBits(),
+// returns the data it provides and stores the error in the TryError field.
+func (r *Reader) TryReadBits(n byte) (u uint64) {
+	if r.TryError == nil {
+		u, r.TryError = r.ReadBits(n)
+	}
+	return
+}
+
+// TryReadByte tries to read the next 8 bits and return them as a byte.
+//
+// If there was a previous TryError, it does nothing. Else it calls ReadByte(),
+// returns the data it provides and stores the error in the TryError field.
+func (r *Reader) TryReadByte() (b byte) {
+	if r.TryError == nil {
+		b, r.TryError = r.ReadByte()
+	}
+	return
+}
+
+// TryReadBool tries to read the next bit, and return true if it is 1.
+//
+// If there was a previous TryError, it does nothing. Else it calls ReadBool(),
+// returns the data it provides and stores the error in the TryError field.
+func (r *Reader) TryReadBool() (b bool) {
+	if r.TryError == nil {
+		b, r.TryError = r.ReadBool()
+	}
 	return
 }
