@@ -8,6 +8,7 @@ package bitio
 
 import (
 	"bufio"
+	"errors"
 	"io"
 )
 
@@ -22,6 +23,18 @@ type Reader interface {
 
 	// ReadBits reads n bits and returns them as the lowest n bits of u.
 	ReadBits(n byte) (u uint64, err error)
+
+	// ReadBitsAsInt reads n bits and returns them as the lowest n bits of u.
+	ReadBitsAsInt(n byte) (u int, err error)
+
+	// ReadBitsAsUInt8 reads n bits and returns them as the lowest n bits of u.
+	ReadBitsAsUInt8(n byte) (u uint8, err error)
+
+	// ReadBitsAsUInt16 reads n bits and returns them as the lowest n bits of u.
+	ReadBitsAsUInt16(n byte) (u uint16, err error)
+
+	// ReadBitsAsUInt32 reads n bits and returns them as the lowest n bits of u.
+	ReadBitsAsUInt32(n byte) (u uint32, err error)
 
 	// ReadBool reads the next bit, and returns true if it is 1.
 	ReadBool() (b bool, err error)
@@ -115,6 +128,55 @@ func (r *reader) ReadBits(n byte) (u uint64, err error) {
 	// cache has exactly as many as needed
 	r.bits = 0 // no need to clear cache, will be overridden on next read
 	return uint64(r.cache), nil
+}
+
+const uintIs32Bits = ^uint(0) == 0xffffffff
+
+func (r *reader) ReadBitsAsInt(n byte) (u int, err error) {
+	if uintIs32Bits && n > 31 {
+		return 0, errors.New("read is too large for result")
+	}
+	if !uintIs32Bits && n > 63 {
+		return 0, errors.New("read is too large for result")
+	}
+	v, err := r.ReadBits(n)
+	if err != nil {
+		return 0, err
+	}
+	return int(v), nil
+}
+
+func (r *reader) ReadBitsAsUInt8(n byte) (u uint8, err error) {
+	if n > 8 {
+		return 0, errors.New("read is too large for result")
+	}
+	v, err := r.ReadBits(n)
+	if err != nil {
+		return 0, err
+	}
+	return uint8(v), nil
+}
+
+func (r *reader) ReadBitsAsUInt16(n byte) (u uint16, err error) {
+	if n > 16 {
+		return 0, errors.New("read is too large for result")
+	}
+	v, err := r.ReadBits(n)
+	if err != nil {
+		return 0, err
+	}
+	return uint16(v), nil
+}
+
+func (r *reader) ReadBitsAsUInt32(n byte) (u uint32, err error) {
+	if n > 32 {
+		return 0, errors.New("read is too large for result")
+	}
+	v, err := r.ReadBits(n)
+	if err != nil {
+		return 0, err
+	}
+	return uint32(v), nil
 }
 
 // ReadByte implements io.ByteReader.
