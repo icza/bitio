@@ -156,7 +156,7 @@ func TestWriterTry(t *testing.T) {
 
 		expected := []byte{0xc1, 0x7f, 0xac, 0x89, 0x24, 0x78, 0x01, 0x02, 0xf8, 0x08, 0xf0, 0xff, 0x80}
 
-		eq, expEq := mighty.EqExpEq(t)
+		eq := mighty.Eq(t)
 
 		w.TryWriteByte(0xc1)
 		w.TryWriteBool(false)
@@ -167,7 +167,8 @@ func TestWriterTry(t *testing.T) {
 		w.TryWriteBits(0x1248f, 20)
 		eq(nil, w.TryError)
 
-		expEq(byte(3))(w.Align())
+		eq(byte(3), w.TryAlign())
+		eq(nil, w.TryError)
 
 		eq(2, w.TryWrite([]byte{0x01, 0x02}))
 		eq(nil, w.TryError)
@@ -178,8 +179,10 @@ func TestWriterTry(t *testing.T) {
 		eq(2, w.TryWrite([]byte{0x80, 0x8f}))
 		eq(nil, w.TryError)
 
-		expEq(byte(4))(w.Align())
-		expEq(byte(0))(w.Align())
+		eq(byte(4), w.TryAlign())
+		eq(nil, w.TryError)
+		eq(byte(0), w.TryAlign())
+		eq(nil, w.TryError)
 		w.TryWriteBits(0x01, 1)
 		w.TryWriteByte(0xff)
 		eq(nil, w.TryError)
@@ -361,8 +364,8 @@ func TestWriterTryError(t *testing.T) {
 	w = NewWriter(&errWriter{})
 	w.TryWriteBool(true)
 	eq(nil, w.TryError)
-	_, err := w.Align()
-	neq(nil, err)
+	_ = w.TryAlign()
+	neq(nil, w.TryError)
 }
 
 func TestChain(t *testing.T) {
