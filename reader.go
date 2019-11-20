@@ -11,52 +11,38 @@ import (
 	"io"
 )
 
-// Reader is the bit reader interface.
-type Reader interface {
-	// Reader is an io.Reader
-	io.Reader
-
-	// Reader is also an io.ByteReader.
-	// ReadByte reads the next 8 bits and returns them as a byte.
-	io.ByteReader
-
-	// ReadBits reads n bits and returns them as the lowest n bits of u.
-	ReadBits(n byte) (u uint64, err error)
-
-	// ReadBool reads the next bit, and returns true if it is 1.
-	ReadBool() (b bool, err error)
-
-	// Align aligns the bit stream to a byte boundary,
-	// so next read will read/use data from the next byte.
-	// Returns the number of unread / skipped bits.
-	Align() (skipped byte)
-}
-
 // An io.Reader and io.ByteReader at the same time.
 type readerAndByteReader interface {
 	io.Reader
 	io.ByteReader
 }
 
-// reader is the bit reader implementation.
-type reader struct {
+// Reader is the bit reader implementation.
+//
+// For convenience, it also implements io.Reader and io.ByteReader.
+type Reader struct {
 	in    readerAndByteReader
 	cache byte // unread bits are stored here
 	bits  byte // number of unread bits in cache
 }
 
 // NewReader returns a new Reader using the specified io.Reader as the input (source).
-func NewReader(in io.Reader) Reader {
+func NewReader(in io.Reader) *Reader {
 	var bin readerAndByteReader
 	bin, ok := in.(readerAndByteReader)
 	if !ok {
 		bin = bufio.NewReader(in)
 	}
-	return &reader{in: bin}
+	return &Reader{in: bin}
 }
 
-// Read implements io.Reader.
-func (r *reader) Read(p []byte) (n int, err error) {
+// Read reads up to len(p) bytes (8 * len(p) bits) from the underlying reader.
+//
+// Read implements io.Reader, and gives a byte-level view of the bit stream.
+// This will give best performance if the underlying io.Reader is aligned
+// to a byte boundary (else all the individual bytes are assembled from multiple bytes).
+// Byte boundary can be ensured by calling Align().
+func (r *Reader) Read(p []byte) (n int, err error) {
 	// r.bits will be the same after reading 8 bits, so we don't need to update that.
 	if r.bits == 0 {
 		return r.in.Read(p)
@@ -71,7 +57,8 @@ func (r *reader) Read(p []byte) (n int, err error) {
 	return
 }
 
-func (r *reader) ReadBits(n byte) (u uint64, err error) {
+// ReadBits reads n bits and returns them as the lowest n bits of u.
+func (r *Reader) ReadBits(n byte) (u uint64, err error) {
 	// Some optimization, frequent cases
 	if n < r.bits {
 		// cache has all needed bits, and there are some extra which will be left in cache
@@ -117,8 +104,10 @@ func (r *reader) ReadBits(n byte) (u uint64, err error) {
 	return uint64(r.cache), nil
 }
 
+// ReadByte reads the next 8 bits and returns them as a byte.
+//
 // ReadByte implements io.ByteReader.
-func (r *reader) ReadByte() (b byte, err error) {
+func (r *Reader) ReadByte() (b byte, err error) {
 	// r.bits will be the same after reading 8 bits, so we don't need to update that.
 	if r.bits == 0 {
 		return r.in.ReadByte()
@@ -127,7 +116,7 @@ func (r *reader) ReadByte() (b byte, err error) {
 }
 
 // readUnalignedByte reads the next 8 bits which are (may be) unaligned and returns them as a byte.
-func (r *reader) readUnalignedByte() (b byte, err error) {
+func (r *Reader) readUnalignedByte() (b byte, err error) {
 	// r.bits will be the same after reading 8 bits, so we don't need to update that.
 	bits := r.bits
 	b = r.cache << (8 - bits)
@@ -140,7 +129,8 @@ func (r *reader) readUnalignedByte() (b byte, err error) {
 	return
 }
 
-func (r *reader) ReadBool() (b bool, err error) {
+// ReadBool reads the next bit, and returns true if it is 1.
+func (r *Reader) ReadBool() (b bool, err error) {
 	if r.bits == 0 {
 		r.cache, err = r.in.ReadByte()
 		if err != nil {
@@ -157,7 +147,10 @@ func (r *reader) ReadBool() (b bool, err error) {
 	return
 }
 
-func (r *reader) Align() (skipped byte) {
+// Align aligns the bit stream to a byte boundary,
+// so next read will read/use data from the next byte.
+// Returns the number of unread / skipped bits.
+func (r *Reader) Align() (skipped byte) {
 	skipped = r.bits
 	r.bits = 0 // no need to clear cache, will be overwritten on next read
 	return
