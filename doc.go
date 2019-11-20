@@ -14,9 +14,10 @@ where decision whether to step left or right in the Huffman tree is the most fre
 Reader and Writer give a bit-level view of the underlying io.Reader and io.Writer, but they also
 provide a byte-level view (io.Reader and io.Writer) at the same time. This means you can also use
 the Reader.Read() and Writer.Write() methods to read and write slices of bytes. These will give
-you best performance ifthe underlying io.Reader and io.Writer are aligned to a byte boundary
+you best performance if the underlying io.Reader and io.Writer are aligned to a byte boundary
 (else all the individual bytes are assembled from / spread to multiple bytes). You can ensure
-byte boundary by calling the Align() method of Reader and Writer.
+byte boundary by calling the Align() method of Reader and Writer. As an extra,
+io.ByteReader and io.ByteWriter are also implemented.
 
 Bit order
 
@@ -42,6 +43,51 @@ Writing the above values would result in the same sequence of bytes:
     err = w.WriteBits(0x07, 3)
     err = w.WriteBits(0x05, 3)
     err = w.WriteBits(0x15, 6)
+    err = w.Close()
+    // b will hold the bytes: 0x8f and 0x55
+
+Error handling
+
+All ReadXXX() and WriteXXX() methods return an error which you are expected to handle.
+For convenience, there are also matching TryReadXXX() and TryWriteXXX() methods
+which do not return an error. Instead they store the (first) error in the
+Reader.TryError / Writer.TryError field which you can inspect later.
+These TryXXX() methods are a no-op if a TryError has been encountered before,
+so it's safe to call multiple TryXXX() methods and defer the error checking.
+
+For example:
+
+    r := NewReader(bytes.NewBuffer([]byte{0x8f, 0x55}))
+    a := r.TryReadBits(4) //   1100 = 0x08
+    b := r.TryReadBits(3) //    111 = 0x07
+    c := r.TryReadBits(3) //    101 = 0x05
+    d := r.TryReadBits(6) // 010101 = 0x15
+    if r.TryError != nil {
+        // Handle error
+    }
+
+This allows you to easily convert the result of individual ReadBits(), like this:
+
+    r := NewReader(bytes.NewBuffer([]byte{0x8f, 0x55}))
+    a := byte(r.TryReadBits(4))   //   1100 = 0x08
+    b := int32(r.TryReadBits(3))  //    111 = 0x07
+    c := uint16(r.TryReadBits(3)) //    101 = 0x05
+    d := int64(r.TryReadBits(6))  // 010101 = 0x15
+    if r.TryError != nil {
+        // Handle error
+    }
+
+And similarly:
+
+    b := &bytes.Buffer{}
+    w := NewWriter(b)
+    w.TryWriteBits(0x08, 4)
+    w.TryWriteBits(0x07, 3)
+    w.TryWriteBits(0x05, 3)
+    w.TryWriteBits(0x15, 6)
+    if r.TryError != nil {
+        // Handle error
+    }
     err = w.Close()
     // b will hold the bytes: 0x8f and 0x55
 
