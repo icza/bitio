@@ -25,6 +25,9 @@ type Writer struct {
 	wrapperbw *bufio.Writer // wrapper bufio.Writer if the target does not implement io.ByteWriter
 	cache     byte          // unwritten bits are stored here
 	bits      byte          // number of unwritten bits in cache
+
+	// TryError holds the first error occurred in TryXXX() methods.
+	TryError error
 }
 
 // NewWriter returns a new Writer using the specified io.Writer as the output.
@@ -176,6 +179,47 @@ func (w *Writer) Align() (skipped byte, err error) {
 		err = w.wrapperbw.Flush()
 	}
 	return
+}
+
+// TryWrite tries to write len(p) bytes (8 * len(p) bits) to the underlying writer.
+//
+// If there was a previous TryError, it does nothing. Else it calls Write(),
+// returns the data it provides and stores the error in the TryError field.
+func (w *Writer) TryWrite(p []byte) (n int) {
+	if w.TryError == nil {
+		n, w.TryError = w.Write(p)
+	}
+	return
+}
+
+// TryWriteBits tries to write out the n lowest bits of r.
+//
+// If there was a previous TryError, it does nothing. Else it calls WriteBits(),
+// and stores the error in the TryError field.
+func (w *Writer) TryWriteBits(r uint64, n byte) {
+	if w.TryError == nil {
+		w.TryError = w.WriteBits(r, n)
+	}
+}
+
+// TryWriteByte tries to write 8 bits.
+//
+// If there was a previous TryError, it does nothing. Else it calls WriteByte(),
+// and stores the error in the TryError field.
+func (w *Writer) TryWriteByte(b byte) {
+	if w.TryError == nil {
+		w.TryError = w.WriteByte(b)
+	}
+}
+
+// TryWriteBool tries to write one bit: 1 if param is true, 0 otherwise.
+//
+// If there was a previous TryError, it does nothing. Else it calls WriteBool(),
+// and stores the error in the TryError field.
+func (w *Writer) TryWriteBool(b bool) {
+	if w.TryError == nil {
+		w.TryError = w.WriteBool(b)
+	}
 }
 
 // Close closes the bit writer, writes out cached bits.
