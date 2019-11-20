@@ -71,8 +71,8 @@ This allows you to easily convert the result of individual ReadBits(), like this
     r := NewReader(bytes.NewBuffer([]byte{0x8f, 0x55}))
     a := byte(r.TryReadBits(4))   //   1100 = 0x08
     b := int32(r.TryReadBits(3))  //    111 = 0x07
-    c := uint16(r.TryReadBits(3)) //    101 = 0x05
-    d := int64(r.TryReadBits(6))  // 010101 = 0x15
+    c := int64(r.TryReadBits(3))  //    101 = 0x05
+    d := uint16(r.TryReadBits(6)) // 010101 = 0x15
     if r.TryError != nil {
         // Handle error
     }
@@ -85,7 +85,7 @@ And similarly:
     w.TryWriteBits(0x07, 3)
     w.TryWriteBits(0x05, 3)
     w.TryWriteBits(0x15, 6)
-    if r.TryError != nil {
+    if w.TryError != nil {
         // Handle error
     }
     err = w.Close()
