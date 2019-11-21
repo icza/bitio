@@ -222,7 +222,7 @@ func (w *Writer) TryWriteBool(b bool) {
 	}
 }
 
-// TryAlign tries to align the bit stream to a byte boundary,
+// TryAlign tries to align the bit stream to a byte boundary.
 //
 // If there was a previous TryError, it does nothing. Else it calls Align(),
 // returns the data it provides and stores the error in the TryError field.

@@ -103,7 +103,7 @@ func (r *Reader) ReadBits(n byte) (u uint64, err error) {
 	}
 
 	// cache has exactly as many as needed
-	r.bits = 0 // no need to clear cache, will be overridden on next read
+	r.bits = 0 // no need to clear cache, will be overwritten on next read
 	return uint64(r.cache), nil
 }
 
