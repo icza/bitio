@@ -31,7 +31,6 @@ type Reader struct {
 
 // NewReader returns a new Reader using the specified io.Reader as the input (source).
 func NewReader(in io.Reader) *Reader {
-	var bin readerAndByteReader
 	bin, ok := in.(readerAndByteReader)
 	if !ok {
 		bin = bufio.NewReader(in)
