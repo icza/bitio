@@ -20,7 +20,7 @@ provide a _byte-level_ view (`io.Reader` and `io.Writer`) at the same time. This
 the `Reader.Read()` and `Writer.Write()` methods to read and write slices of bytes. These will give
 you best performance if the underlying `io.Reader` and `io.Writer` are aligned to a byte boundary
 (else all the individual bytes are assembled from / spread to multiple bytes). You can ensure
-byte boundary by calling the `Align()` method of `Reader` and `Writer`. As an extra,
+byte boundary alignment by calling the `Align()` method of `Reader` and `Writer`. As an extra,
 `io.ByteReader` and `io.ByteWriter` are also implemented.
 
 ### Bit order
