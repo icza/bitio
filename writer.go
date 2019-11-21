@@ -68,12 +68,13 @@ func (w *Writer) Write(p []byte) (n int, err error) {
 }
 
 // WriteBits writes out the n lowest bits of r.
-//
-// r cannot have bits set at positions higher than n-1 (zero indexed).
-// If your data might not satisfy this, you must explicitly apply a mask before
-// passing it to WriteBits. E.g. if you want to write 8 bits:
-//   err := w.WriteBits(0x1234&0xff, 8) // &0xff masks bits higher than the 8th
+// Bits of r in positions higher than n are ignored.
 func (w *Writer) WriteBits(r uint64, n byte) (err error) {
+	// if r would have bits set higher than n-1 (zero indexed),
+	// the below implementation could "corrupt" bits in cache.
+	// That is not acceptable. To be on the safe side, mask out higher bits:
+	r &= 1<<n - 1
+
 	// Some optimization, frequent cases
 	newbits := w.bits + n
 	if newbits < 8 {
