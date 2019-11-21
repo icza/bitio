@@ -1,6 +1,6 @@
 /*
 
-Reader interface definition and implementation.
+Reader implementation.
 
 */
 

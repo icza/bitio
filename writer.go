@@ -1,6 +1,6 @@
 /*
 
-Writer interface definition and implementation.
+Writer implementation.
 
 */
 
