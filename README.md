@@ -5,12 +5,12 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/icza/bitio)](https://goreportcard.com/report/github.com/icza/bitio)
 [![codecov](https://codecov.io/gh/icza/bitio/branch/master/graph/badge.svg)](https://codecov.io/gh/icza/bitio)
 
-Package `bitio` provides a highly optimized bit-level `Reader` and `Writer` for Go.
+Package `bitio` provides an optimized bit-level `Reader` and `Writer` for Go.
 
 You can use `Reader.ReadBits()` to read arbitrary number of bits from an `io.Reader` and return it as an `uint64`,
 and `Writer.WriteBits()` to write arbitrary number of bits of an `uint64` value to an `io.Writer`.
 
-Both `Reader` and `Writer` also provide highly optimized methods for reading / writing
+Both `Reader` and `Writer` also provide optimized methods for reading / writing
 1 bit of information in the form of a `bool` value: `Reader.ReadBool()` and `Writer.WriteBool()`.
 These make this package ideal for compression algorithms that use [Huffman coding](https://en.wikipedia.org/wiki/Huffman_coding) for example,
 where decision whether to step left or right in the Huffman tree is the most frequent operation.
