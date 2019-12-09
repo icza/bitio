@@ -91,7 +91,8 @@ func (w *Writer) WriteBits(r uint64, n uint8) (err error) {
 // the input r is not masked.
 //
 // E.g. if you want to write 8 bits:
-//   err := w.WriteBitsUnsafe(0x34, 8) // OK, 0x34 has no bits set higher than the 8th
+//   err := w.WriteBitsUnsafe(0x34, 8)        // This is OK,
+//                                            // 0x34 has no bits set higher than the 8th
 //   err := w.WriteBitsUnsafe(0x1234&0xff, 8) // &0xff masks out bits higher than the 8th
 //
 // Or:
