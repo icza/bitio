@@ -60,7 +60,7 @@ func (r *Reader) Read(p []byte) (n int, err error) {
 }
 
 // ReadBits reads n bits and returns them as the lowest n bits of u.
-func (r *Reader) ReadBits(n byte) (u uint64, err error) {
+func (r *Reader) ReadBits(n uint8) (u uint64, err error) {
 	// Some optimization, frequent cases
 	if n < r.bits {
 		// cache has all needed bits, and there are some extra which will be left in cache
@@ -152,7 +152,7 @@ func (r *Reader) ReadBool() (b bool, err error) {
 // Align aligns the bit stream to a byte boundary,
 // so next read will read/use data from the next byte.
 // Returns the number of unread / skipped bits.
-func (r *Reader) Align() (skipped byte) {
+func (r *Reader) Align() (skipped uint8) {
 	skipped = r.bits
 	r.bits = 0 // no need to clear cache, will be overwritten on next read
 	return
@@ -173,7 +173,7 @@ func (r *Reader) TryRead(p []byte) (n int) {
 //
 // If there was a previous TryError, it does nothing. Else it calls ReadBits(),
 // returns the data it provides and stores the error in the TryError field.
-func (r *Reader) TryReadBits(n byte) (u uint64) {
+func (r *Reader) TryReadBits(n uint8) (u uint64) {
 	if r.TryError == nil {
 		u, r.TryError = r.ReadBits(n)
 	}

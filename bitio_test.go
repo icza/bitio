@@ -29,7 +29,7 @@ func TestReader(t *testing.T) {
 	expEq(true)(r.ReadBool())
 	expEq(false)(r.ReadBool())
 
-	eq(byte(6), r.Align())
+	eq(uint8(6), r.Align())
 
 	s := make([]byte, 2)
 	expEq(2)(r.Read(s))
@@ -59,7 +59,7 @@ func TestReaderTry(t *testing.T) {
 	eq(true, r.TryReadBool())
 	eq(false, r.TryReadBool())
 
-	eq(byte(6), r.Align())
+	eq(uint8(6), r.Align())
 
 	s := make([]byte, 2)
 	eq(2, r.TryRead(s))
@@ -117,7 +117,7 @@ func TestWriter(t *testing.T) {
 		eq(nil, w.WriteBits(0x01, 1))
 		eq(nil, w.WriteBits(0x1248f, 20))
 
-		expEq(byte(3))(w.Align())
+		expEq(uint8(3))(w.Align())
 
 		expEq(2)(w.Write([]byte{0x01, 0x02}))
 
@@ -125,8 +125,8 @@ func TestWriter(t *testing.T) {
 
 		expEq(2)(w.Write([]byte{0x80, 0x8f}))
 
-		expEq(byte(4))(w.Align())
-		expEq(byte(0))(w.Align())
+		expEq(uint8(4))(w.Align())
+		expEq(uint8(0))(w.Align())
 		eq(nil, w.WriteBits(0x01, 1))
 		eq(nil, w.WriteByte(0xff))
 
@@ -167,7 +167,7 @@ func TestWriterTry(t *testing.T) {
 		w.TryWriteBits(0x1248f, 20)
 		eq(nil, w.TryError)
 
-		eq(byte(3), w.TryAlign())
+		eq(uint8(3), w.TryAlign())
 		eq(nil, w.TryError)
 
 		eq(2, w.TryWrite([]byte{0x01, 0x02}))
@@ -179,9 +179,9 @@ func TestWriterTry(t *testing.T) {
 		eq(2, w.TryWrite([]byte{0x80, 0x8f}))
 		eq(nil, w.TryError)
 
-		eq(byte(4), w.TryAlign())
+		eq(uint8(4), w.TryAlign())
 		eq(nil, w.TryError)
-		eq(byte(0), w.TryAlign())
+		eq(uint8(0), w.TryAlign())
 		eq(nil, w.TryError)
 		w.TryWriteBits(0x01, 1)
 		w.TryWriteByte(0xff)

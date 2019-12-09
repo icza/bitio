@@ -69,7 +69,7 @@ func (w *Writer) Write(p []byte) (n int, err error) {
 
 // WriteBits writes out the n lowest bits of r.
 // Bits of r in positions higher than n are ignored.
-func (w *Writer) WriteBits(r uint64, n byte) (err error) {
+func (w *Writer) WriteBits(r uint64, n uint8) (err error) {
 	// if r would have bits set higher than n-1 (zero indexed),
 	// the below implementation could "corrupt" bits in cache.
 	// That is not acceptable. To be on the safe side, mask out higher bits:
@@ -167,7 +167,7 @@ func (w *Writer) WriteBool(b bool) (err error) {
 // so next write will start/go into a new byte.
 // If there are cached bits, they are first written to the output.
 // Returns the number of skipped (unset but still written) bits.
-func (w *Writer) Align() (skipped byte, err error) {
+func (w *Writer) Align() (skipped uint8, err error) {
 	if w.bits > 0 {
 		if err = w.out.WriteByte(w.cache); err != nil {
 			return
@@ -197,7 +197,7 @@ func (w *Writer) TryWrite(p []byte) (n int) {
 //
 // If there was a previous TryError, it does nothing. Else it calls WriteBits(),
 // and stores the error in the TryError field.
-func (w *Writer) TryWriteBits(r uint64, n byte) {
+func (w *Writer) TryWriteBits(r uint64, n uint8) {
 	if w.TryError == nil {
 		w.TryError = w.WriteBits(r, n)
 	}
@@ -227,7 +227,7 @@ func (w *Writer) TryWriteBool(b bool) {
 //
 // If there was a previous TryError, it does nothing. Else it calls Align(),
 // returns the data it provides and stores the error in the TryError field.
-func (w *Writer) TryAlign() (skipped byte) {
+func (w *Writer) TryAlign() (skipped uint8) {
 	if w.TryError == nil {
 		skipped, w.TryError = w.Align()
 	}
