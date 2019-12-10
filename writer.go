@@ -84,11 +84,12 @@ func (w *Writer) WriteBits(r uint64, n uint8) (err error) {
 
 // WriteBitsUnsafe writes out the n lowest bits of r.
 //
-// r cannot have bits set at positions higher than n-1 (zero indexed).
+// r must not have bits set at positions higher than n-1 (zero indexed).
 // If r might not satisfy this, a mask must be explicitly applied
 // before passing it to WriteBitsUnsafe(), or WriteBits() should be used instead.
 // WriteBitsUnsafe() gives slightly better performance than WriteBits() because
-// the input r is not masked.
+// the input r is not masked. Calling WriteBitsUnsafe() with an r that does
+// not satisfy this is undefined behavior (might corrupt previously written bits).
 //
 // E.g. if you want to write 8 bits:
 //   err := w.WriteBitsUnsafe(0x34, 8)        // This is OK,
