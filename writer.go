@@ -21,11 +21,11 @@ type writerAndByteWriter interface {
 //
 // For convenience, it also implements io.WriterCloser and io.ByteWriter.
 type Writer struct {
-	out       writerAndByteWriter
-	wrapperbw *bufio.Writer // wrapper bufio.Writer if the target does not implement io.ByteWriter
-	cache     byte          // unwritten bits are stored here
-	bits      byte          // number of unwritten bits in cache
-
+	out           writerAndByteWriter
+	wrapperbw     *bufio.Writer // wrapper bufio.Writer if the target does not implement io.ByteWriter
+	cache         byte          // unwritten bits are stored here
+	bits          byte          // number of unwritten bits in cache
+	bufferBitSize uint64        // The number of bits written
 	// TryError holds the first error occurred in TryXXX() methods.
 	TryError error
 }
@@ -55,7 +55,9 @@ func NewWriter(out io.Writer) *Writer {
 func (w *Writer) Write(p []byte) (n int, err error) {
 	// w.bits will be the same after writing 8 bits, so we don't need to update that.
 	if w.bits == 0 {
-		return w.out.Write(p)
+		n, err = w.out.Write(p)
+		w.bufferBitSize += uint64(n) * 8
+		return
 	}
 
 	for i, b := range p {
@@ -106,6 +108,7 @@ func (w *Writer) WriteBitsUnsafe(r uint64, n uint8) (err error) {
 		// r fits into cache, no write will occur to out
 		w.cache |= byte(r) << (8 - newbits)
 		w.bits = newbits
+		w.bufferBitSize += uint64(n)
 		return nil
 	}
 
@@ -117,6 +120,7 @@ func (w *Writer) WriteBitsUnsafe(r uint64, n uint8) (err error) {
 		if err != nil {
 			return
 		}
+		w.bufferBitSize += uint64(free)
 		n -= free
 		// write out whole bytes
 		for n >= 8 {
@@ -126,11 +130,13 @@ func (w *Writer) WriteBitsUnsafe(r uint64, n uint8) (err error) {
 			if err != nil {
 				return
 			}
+			w.bufferBitSize += 8
 		}
 		// Put remaining into cache
 		if n > 0 {
 			// Note: n < 8 (in case of n=8, 1<<n would overflow byte)
 			w.cache, w.bits = (byte(r)&((1<<n)-1))<<(8-n), n
+			w.bufferBitSize += uint64(n)
 		} else {
 			w.cache, w.bits = 0, 0
 		}
@@ -140,6 +146,7 @@ func (w *Writer) WriteBitsUnsafe(r uint64, n uint8) (err error) {
 	// cache will be filled exactly with the bits to be written
 	bb := w.cache | byte(r)
 	w.cache, w.bits = 0, 0
+	w.bufferBitSize += uint64(n)
 	return w.out.WriteByte(bb)
 }
 
@@ -149,7 +156,11 @@ func (w *Writer) WriteBitsUnsafe(r uint64, n uint8) (err error) {
 func (w *Writer) WriteByte(b byte) (err error) {
 	// w.bits will be the same after writing 8 bits, so we don't need to update that.
 	if w.bits == 0 {
-		return w.out.WriteByte(b)
+		err = w.out.WriteByte(b)
+		if err == nil {
+			w.bufferBitSize += 8
+		}
+		return err
 	}
 	return w.writeUnalignedByte(b)
 }
@@ -163,6 +174,7 @@ func (w *Writer) writeUnalignedByte(b byte) (err error) {
 		return
 	}
 	w.cache = (b & (1<<bits - 1)) << (8 - bits)
+	w.bufferBitSize += 8
 	return
 }
 
@@ -178,6 +190,7 @@ func (w *Writer) WriteBool(b bool) (err error) {
 			return
 		}
 		w.cache, w.bits = 0, 0
+		w.bufferBitSize += 1
 		return nil
 	}
 
@@ -185,6 +198,7 @@ func (w *Writer) WriteBool(b bool) (err error) {
 	if b {
 		w.cache |= 1 << (8 - w.bits)
 	}
+	w.bufferBitSize += 1
 	return nil
 }
 
@@ -200,6 +214,7 @@ func (w *Writer) Align() (skipped uint8, err error) {
 
 		skipped = 8 - w.bits
 		w.cache, w.bits = 0, 0
+		w.bufferBitSize += uint64(skipped)
 	}
 	if w.wrapperbw != nil {
 		err = w.wrapperbw.Flush()
@@ -280,4 +295,9 @@ func (w *Writer) Close() (err error) {
 	}
 
 	return nil
+}
+
+// GetBufferBitSize returns the total number of bits written.
+func (w *Writer) GetBufferBitSize() uint64 {
+	return w.bufferBitSize
 }

@@ -138,30 +138,42 @@ func TestWriter(t *testing.T) {
 
 		eq, expEq := mighty.EqExpEq(t)
 
+		eq(uint64(0), w.GetBufferBitSize())
+
 		eq(nil, w.WriteByte(0xc1))
+		eq(uint64(8), w.GetBufferBitSize())
 		eq(nil, w.WriteBool(false))
+		eq(uint64(9), w.GetBufferBitSize())
 		eq(nil, w.WriteBits(0x3f, 6))
+		eq(uint64(15), w.GetBufferBitSize())
 		eq(nil, w.WriteBool(true))
+		eq(uint64(16), w.GetBufferBitSize())
 		eq(nil, w.WriteByte(0xac))
+		eq(uint64(24), w.GetBufferBitSize())
 		eq(nil, w.WriteBits(0x01, 1))
+		eq(uint64(25), w.GetBufferBitSize())
 		eq(nil, w.WriteBits(0x1248f, 20))
-
+		eq(uint64(45), w.GetBufferBitSize())
 		expEq(uint8(3))(w.Align())
-
+		eq(uint64(48), w.GetBufferBitSize())
 		expEq(2)(w.Write([]byte{0x01, 0x02}))
-
+		eq(uint64(64), w.GetBufferBitSize())
 		eq(nil, w.WriteBits(0x0f, 4))
-
+		eq(uint64(68), w.GetBufferBitSize())
 		expEq(2)(w.Write([]byte{0x80, 0x8f}))
-
+		eq(uint64(84), w.GetBufferBitSize())
 		expEq(uint8(4))(w.Align())
+		eq(uint64(88), w.GetBufferBitSize())
 		expEq(uint8(0))(w.Align())
+		eq(uint64(88), w.GetBufferBitSize())
 		eq(nil, w.WriteBits(0x01, 1))
+		eq(uint64(89), w.GetBufferBitSize())
 		eq(nil, w.WriteByte(0xff))
-
+		eq(uint64(97), w.GetBufferBitSize())
 		eq(uint8(7), w.TryAlign())
+		eq(uint64(104), w.GetBufferBitSize())
 		w.WriteBitsUnsafe(0x1234, 16)
-
+		eq(uint64(120), w.GetBufferBitSize())
 		eq(nil, w.Close())
 
 		eq(true, bytes.Equal(b.Bytes(), expected))
@@ -191,12 +203,18 @@ func TestWriterTry(t *testing.T) {
 		eq := mighty.Eq(t)
 
 		w.TryWriteByte(0xc1)
+		eq(uint64(8), w.GetBufferBitSize())
 		w.TryWriteBool(false)
 		w.TryWriteBits(0x3f, 6)
+		eq(uint64(15), w.GetBufferBitSize())
 		w.TryWriteBool(true)
+		eq(uint64(16), w.GetBufferBitSize())
 		w.TryWriteByte(0xac)
+		eq(uint64(24), w.GetBufferBitSize())
 		w.TryWriteBits(0x01, 1)
+		eq(uint64(25), w.GetBufferBitSize())
 		w.TryWriteBits(0x1248f, 20)
+		eq(uint64(45), w.GetBufferBitSize())
 		eq(nil, w.TryError)
 
 		eq(uint8(3), w.TryAlign())
@@ -233,8 +251,10 @@ func TestReaderEOF(t *testing.T) {
 
 	r := NewReader(bytes.NewBuffer([]byte{0x01}))
 
+	eq(uint64(0), r.GetBitPosition())
 	b, err := r.ReadByte()
 	eq(byte(1), b)
+	eq(uint64(8), r.GetBitPosition())
 	eq(nil, err)
 	_, err = r.ReadByte()
 	eq(io.EOF, err)
@@ -245,6 +265,7 @@ func TestReaderEOF(t *testing.T) {
 	n, err := r.Read(make([]byte, 2))
 	eq(0, n)
 	eq(io.EOF, err)
+	eq(uint64(8), r.GetBitPosition())
 }
 
 func TestReaderTryEOF(t *testing.T) {
@@ -255,6 +276,7 @@ func TestReaderTryEOF(t *testing.T) {
 	b := r.TryReadByte()
 	eq(byte(1), b)
 	eq(nil, r.TryError)
+	eq(uint64(8), r.GetBitPosition())
 	_ = r.TryReadByte()
 	eq(io.EOF, r.TryError)
 	_ = r.TryReadBool()
@@ -264,6 +286,7 @@ func TestReaderTryEOF(t *testing.T) {
 	n := r.TryRead(make([]byte, 2))
 	eq(0, n)
 	eq(io.EOF, r.TryError)
+	eq(uint64(8), r.GetBitPosition())
 }
 
 func TestReaderEOF2(t *testing.T) {
@@ -273,21 +296,25 @@ func TestReaderEOF2(t *testing.T) {
 
 	r := NewReader(bytes.NewBuffer([]byte{0x01}))
 	_, err = r.ReadBits(17)
+	eq(uint64(8), r.GetBitPosition())
 	eq(io.EOF, err)
 
 	// Byte spreading byte boundary (readUnalignedByte)
 	r = NewReader(bytes.NewBuffer([]byte{0xc1, 0x01}))
 	expEq(true)(r.ReadBool())
+	eq(uint64(1), r.GetBitPosition())
 	expEq(byte(0x82))(r.ReadByte())
 	// readUnalignedByte resulting in EOF
 	_, err = r.ReadByte()
 	eq(io.EOF, err)
+	eq(uint64(9), r.GetBitPosition())
 
 	r = NewReader(bytes.NewBuffer([]byte{0xc1, 0x01}))
 	expEq(true)(r.ReadBool())
 	got, err := r.Read(make([]byte, 2))
 	eq(1, got)
 	eq(io.EOF, err)
+	eq(uint64(9), r.GetBitPosition())
 }
 
 func TestReaderTryEOF2(t *testing.T) {
@@ -296,22 +323,28 @@ func TestReaderTryEOF2(t *testing.T) {
 	r := NewReader(bytes.NewBuffer([]byte{0x01}))
 	_ = r.TryReadBits(17)
 	eq(io.EOF, r.TryError)
+	eq(uint64(8), r.GetBitPosition())
 
 	// Byte spreading byte boundary (readUnalignedByte)
 	r = NewReader(bytes.NewBuffer([]byte{0xc1, 0x01}))
 	eq(true, r.TryReadBool())
 	eq(nil, r.TryError)
+	eq(uint64(1), r.GetBitPosition())
 	eq(byte(0x82), r.TryReadByte())
 	eq(nil, r.TryError)
+	eq(uint64(9), r.GetBitPosition())
 	// readUnalignedByte resulting in EOF
 	_ = r.TryReadByte()
 	eq(io.EOF, r.TryError)
+	eq(uint64(9), r.GetBitPosition())
 
 	r = NewReader(bytes.NewBuffer([]byte{0xc1, 0x01}))
 	eq(true, r.TryReadBool())
+	eq(uint64(1), r.GetBitPosition())
 	got := r.TryRead(make([]byte, 2))
 	eq(1, got)
 	eq(io.EOF, r.TryError)
+	eq(uint64(9), r.GetBitPosition())
 }
 
 type nonByteReaderWriter struct {
@@ -350,25 +383,31 @@ func TestWriterError(t *testing.T) {
 
 	w := NewWriter(&errWriter{1})
 	eq(nil, w.WriteBool(true))
+	eq(uint64(1), w.GetBufferBitSize())
 	got, err := w.Write([]byte{0x01, 0x02})
 	eq(1, got)
 	neq(nil, err)
 	neq(nil, w.Close())
+	eq(uint64(9), w.GetBufferBitSize())
 
 	w = NewWriter(&errWriter{0})
 	neq(nil, w.WriteBits(0x00, 9))
+	eq(uint64(0), w.GetBufferBitSize())
 
 	w = NewWriter(&errWriter{1})
 	neq(nil, w.WriteBits(0x00, 17))
+	eq(uint64(8), w.GetBufferBitSize())
 
 	w = NewWriter(&errWriter{})
 	eq(nil, w.WriteBits(0x00, 7))
 	neq(nil, w.WriteBool(false))
+	eq(uint64(7), w.GetBufferBitSize())
 
 	w = NewWriter(&errWriter{})
 	eq(nil, w.WriteBool(true))
 	_, err = w.Align()
 	neq(nil, err)
+	eq(uint64(1), w.GetBufferBitSize())
 }
 
 func TestWriterTryError(t *testing.T) {
@@ -377,30 +416,38 @@ func TestWriterTryError(t *testing.T) {
 	w := NewWriter(&errWriter{1})
 	w.TryWriteBool(true)
 	eq(nil, w.TryError)
+	eq(uint64(1), w.GetBufferBitSize())
 	got := w.TryWrite([]byte{0x01, 0x02})
 	eq(1, got)
 	neq(nil, w.TryError)
 	neq(nil, w.Close())
+	eq(uint64(9), w.GetBufferBitSize())
 
 	w = NewWriter(&errWriter{0})
 	w.TryWriteBits(0x00, 9)
 	neq(nil, w.TryError)
+	eq(uint64(0), w.GetBufferBitSize())
 
 	w = NewWriter(&errWriter{1})
 	w.TryWriteBits(0x00, 17)
 	neq(nil, w.TryError)
+	eq(uint64(8), w.GetBufferBitSize())
 
 	w = NewWriter(&errWriter{})
 	w.TryWriteBits(0x00, 7)
 	eq(nil, w.TryError)
+	eq(uint64(7), w.GetBufferBitSize())
 	w.TryWriteBool(false)
 	neq(nil, w.TryError)
+	eq(uint64(7), w.GetBufferBitSize())
 
 	w = NewWriter(&errWriter{})
 	w.TryWriteBool(true)
 	eq(nil, w.TryError)
+	eq(uint64(1), w.GetBufferBitSize())
 	_ = w.TryAlign()
 	neq(nil, w.TryError)
+	eq(uint64(1), w.GetBufferBitSize())
 }
 
 func TestChain(t *testing.T) {
@@ -413,21 +460,30 @@ func TestChain(t *testing.T) {
 
 	expected := make([]uint64, 100000)
 	bits := make([]byte, len(expected))
-
+	expectedWriteSize := uint64(0)
 	// Writing (generating)
 	for i := range expected {
 		expected[i] = uint64(rand.Int63())
 		bits[i] = byte(1 + rand.Int31n(60))
 		expected[i] &= uint64(1)<<bits[i] - 1
 		w.WriteBits(expected[i], bits[i])
+		expectedWriteSize += uint64(bits[i])
+		eq(expectedWriteSize, w.GetBufferBitSize())
 	}
 
+	skipped, err := w.Align()
+	eq(nil, err)
 	eq(nil, w.Close())
 
 	r := NewReader(bytes.NewBuffer(b.Bytes()))
+	expectedReadSize := uint64(0)
 
 	// Reading (verifying)
 	for i, v := range expected {
 		expEq(v)(r.ReadBits(bits[i]))
+		expectedReadSize += uint64(bits[i])
+		eq(expectedReadSize, r.GetBitPosition())
 	}
+
+	eq(r.GetBitPosition()+uint64(skipped), w.GetBufferBitSize())
 }
