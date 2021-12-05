@@ -21,9 +21,10 @@ type readerAndByteReader interface {
 //
 // For convenience, it also implements io.Reader and io.ByteReader.
 type Reader struct {
-	in    readerAndByteReader
-	cache byte // unread bits are stored here
-	bits  byte // number of unread bits in cache
+	in          readerAndByteReader
+	bitPosition uint64 // the current bit position
+	cache       byte   // unread bits are stored here
+	bits        byte   // number of unread bits in cache
 
 	// TryError holds the first error occurred in TryXXX() methods.
 	TryError error
@@ -47,7 +48,9 @@ func NewReader(in io.Reader) *Reader {
 func (r *Reader) Read(p []byte) (n int, err error) {
 	// r.bits will be the same after reading 8 bits, so we don't need to update that.
 	if r.bits == 0 {
-		return r.in.Read(p)
+		n, err = r.in.Read(p)
+		r.bitPosition += uint64(n) * 8
+		return
 	}
 
 	for ; n < len(p); n++ {
@@ -68,6 +71,7 @@ func (r *Reader) ReadBits(n uint8) (u uint64, err error) {
 		u = uint64(r.cache >> shift)
 		r.cache &= 1<<shift - 1
 		r.bits = shift
+		r.bitPosition += uint64(n)
 		return
 	}
 
@@ -76,6 +80,7 @@ func (r *Reader) ReadBits(n uint8) (u uint64, err error) {
 		if r.bits > 0 {
 			u = uint64(r.cache)
 			n -= r.bits
+			r.bitPosition += uint64(r.bits)
 		}
 		// Read whole bytes
 		for n >= 8 {
@@ -83,6 +88,7 @@ func (r *Reader) ReadBits(n uint8) (u uint64, err error) {
 			if err2 != nil {
 				return 0, err2
 			}
+			r.bitPosition += 8
 			u = u<<8 + uint64(b)
 			n -= 8
 		}
@@ -98,11 +104,13 @@ func (r *Reader) ReadBits(n uint8) (u uint64, err error) {
 		} else {
 			r.bits = 0
 		}
+		r.bitPosition += uint64(n)
 		return u, nil
 	}
 
 	// cache has exactly as many as needed
 	r.bits = 0 // no need to clear cache, will be overwritten on next read
+	r.bitPosition += uint64(n)
 	return uint64(r.cache), nil
 }
 
@@ -112,7 +120,11 @@ func (r *Reader) ReadBits(n uint8) (u uint64, err error) {
 func (r *Reader) ReadByte() (b byte, err error) {
 	// r.bits will be the same after reading 8 bits, so we don't need to update that.
 	if r.bits == 0 {
-		return r.in.ReadByte()
+		b, err = r.in.ReadByte()
+		if err == nil {
+			r.bitPosition += 8
+		}
+		return
 	}
 	return r.readUnalignedByte()
 }
@@ -128,6 +140,7 @@ func (r *Reader) readUnalignedByte() (b byte, err error) {
 	}
 	b |= r.cache >> bits
 	r.cache &= 1<<bits - 1
+	r.bitPosition += 8
 	return
 }
 
@@ -140,12 +153,14 @@ func (r *Reader) ReadBool() (b bool, err error) {
 		}
 		b = (r.cache & 0x80) != 0
 		r.cache, r.bits = r.cache&0x7f, 7
+		r.bitPosition += 1
 		return
 	}
 
 	r.bits--
 	b = (r.cache & (1 << r.bits)) != 0
 	r.cache &= 1<<r.bits - 1
+	r.bitPosition += 1
 	return
 }
 
@@ -155,6 +170,7 @@ func (r *Reader) ReadBool() (b bool, err error) {
 func (r *Reader) Align() (skipped uint8) {
 	skipped = r.bits
 	r.bits = 0 // no need to clear cache, will be overwritten on next read
+	r.bitPosition += uint64(skipped)
 	return
 }
 
@@ -200,4 +216,9 @@ func (r *Reader) TryReadBool() (b bool) {
 		b, r.TryError = r.ReadBool()
 	}
 	return
+}
+
+// GetBitPosition returns the current bit position.
+func (r *Reader) GetBitPosition() (pos uint64) {
+	return r.bitPosition
 }
