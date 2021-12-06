@@ -11,13 +11,13 @@ import (
 )
 
 // CountReader is an improved version of Reader that also keeps track
-// of the number of of processed bits. If you don't need the number
+// of the number of processed bits. If you don't need the number
 // of processed bits, use the faster Reader.
 //
 // For convenience, it also implements io.Reader and io.ByteReader.
 type CountReader struct {
 	*Reader
-	BitsCount int64 // total number of bits read
+	BitsCount int64 // Total number of bits read
 }
 
 // NewCountReader returns a new CountReader using the specified io.Reader as

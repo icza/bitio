@@ -11,7 +11,7 @@ import (
 )
 
 // CountWriter is an improved version of Writer that also keeps track
-// of the number of of processed bits. If you don't need the number
+// of the number of processed bits. If you don't need the number
 // of processed bits, use the faster Writer.
 //
 // For convenience, it also implements io.WriterCloser and io.ByteWriter.
