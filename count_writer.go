@@ -14,8 +14,8 @@ import (
 //
 // For convenience, it also implements io.WriterCloser and io.ByteWriter.
 type CountWriter struct {
-	Writer
-	bufferBitSize uint64 // The number of bits written
+	*Writer
+	bufferBitSize int64 // The number of bits written
 }
 
 // NewCountWriter returns a new CountWriter using the specified io.Writer as the
@@ -25,7 +25,7 @@ type CountWriter struct {
 // If you can't or don't want to close it, flushing data can also be forced
 // by calling Align().
 func NewCountWriter(out io.Writer) *CountWriter {
-	return &CountWriter{*NewWriter(out), 0}
+	return &CountWriter{NewWriter(out), 0}
 }
 
 // Write writes len(p) bytes (8 * len(p) bits) to the underlying writer.
@@ -36,7 +36,7 @@ func NewCountWriter(out io.Writer) *CountWriter {
 // Byte boundary can be ensured by calling Align().
 func (w *CountWriter) Write(p []byte) (n int, err error) {
 	n, err = w.Writer.Write(p)
-	w.bufferBitSize += uint64(n) * 8
+	w.bufferBitSize += int64(n) * 8
 	return
 }
 
@@ -75,7 +75,7 @@ func (w *CountWriter) WriteBits(r uint64, n uint8) (err error) {
 func (w *CountWriter) WriteBitsUnsafe(r uint64, n uint8) (err error) {
 	err = w.Writer.WriteBitsUnsafe(r, n)
 	if err == nil {
-		w.bufferBitSize += uint64(n)
+		w.bufferBitSize += int64(n)
 	}
 	return
 }
@@ -106,7 +106,7 @@ func (w *CountWriter) WriteBool(b bool) (err error) {
 // Returns the number of skipped (unset but still written) bits.
 func (w *CountWriter) Align() (skipped uint8, err error) {
 	skipped, err = w.Writer.Align()
-	w.bufferBitSize += uint64(skipped)
+	w.bufferBitSize += int64(skipped)
 	return
 }
 
@@ -186,6 +186,6 @@ func (w *CountWriter) Close() (err error) {
 }
 
 // GetBufferBitSize returns the total number of bits written.
-func (w *CountWriter) GetBufferBitSize() uint64 {
+func (w *CountWriter) GetBufferBitSize() int64 {
 	return w.bufferBitSize
 }
