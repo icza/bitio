@@ -12,11 +12,11 @@ import (
 
 type CountReader struct {
 	*Reader
-	bitPosition int64 // the current bit position
+	BitsCount int64 // total number of bits read
 }
 
 // NewCountReader returns a new CountReader using the specified io.Reader as
-//the input (source).
+// the input (source).
 func NewCountReader(in io.Reader) *CountReader {
 	return &CountReader{NewReader(in), 0}
 }
@@ -30,7 +30,7 @@ func NewCountReader(in io.Reader) *CountReader {
 // Byte boundary can be ensured by calling Align().
 func (r *CountReader) Read(p []byte) (n int, err error) {
 	n, err = r.Reader.Read(p)
-	r.bitPosition += int64(n) * 8
+	r.BitsCount += int64(n) * 8
 	return
 }
 
@@ -38,7 +38,7 @@ func (r *CountReader) Read(p []byte) (n int, err error) {
 func (r *CountReader) ReadBits(n uint8) (u uint64, err error) {
 	u, err = r.Reader.ReadBits(n)
 	if err == nil {
-		r.bitPosition += int64(n)
+		r.BitsCount += int64(n)
 	}
 	return
 }
@@ -49,7 +49,7 @@ func (r *CountReader) ReadBits(n uint8) (u uint64, err error) {
 func (r *CountReader) ReadByte() (b byte, err error) {
 	b, err = r.Reader.ReadByte()
 	if err == nil {
-		r.bitPosition += 8
+		r.BitsCount += 8
 	}
 	return
 }
@@ -58,7 +58,7 @@ func (r *CountReader) ReadByte() (b byte, err error) {
 func (r *CountReader) ReadBool() (b bool, err error) {
 	b, err = r.Reader.ReadBool()
 	if err == nil {
-		r.bitPosition += 1
+		r.BitsCount += 1
 	}
 	return
 }
@@ -68,7 +68,7 @@ func (r *CountReader) ReadBool() (b bool, err error) {
 // Returns the number of unread / skipped bits.
 func (r *CountReader) Align() (skipped uint8) {
 	skipped = r.Reader.Align()
-	r.bitPosition += int64(skipped)
+	r.BitsCount += int64(skipped)
 	return
 }
 
@@ -114,9 +114,4 @@ func (r *CountReader) TryReadBool() (b bool) {
 		b, r.TryError = r.ReadBool()
 	}
 	return
-}
-
-// GetBitPosition returns the current bit position.
-func (r *CountReader) GetBitPosition() (pos int64) {
-	return r.bitPosition
 }
