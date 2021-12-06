@@ -17,43 +17,27 @@ func TestReader(t *testing.T) {
 	r := NewReader(bytes.NewBuffer(data))
 	eq, expEq := mighty.EqExpEq(t)
 
-	eq(uint64(0), r.GetBitPosition())
-
 	expEq(byte(3))(r.ReadByte())
-	eq(uint64(8), r.GetBitPosition())
-
 	expEq(uint64(255))(r.ReadBits(8))
-	eq(uint64(16), r.GetBitPosition())
 
 	expEq(uint64(0xc))(r.ReadBits(4))
-	eq(uint64(20), r.GetBitPosition())
 
 	expEq(uint64(0xc1))(r.ReadBits(8))
-	eq(uint64(28), r.GetBitPosition())
 
 	expEq(uint64(0xabcde))(r.ReadBits(20))
-	eq(uint64(48), r.GetBitPosition())
 
 	expEq(true)(r.ReadBool())
-	eq(uint64(49), r.GetBitPosition())
-
 	expEq(false)(r.ReadBool())
-	eq(uint64(50), r.GetBitPosition())
 
 	eq(uint8(6), r.Align())
-	eq(uint64(56), r.GetBitPosition())
 
 	s := make([]byte, 2)
 	expEq(2)(r.Read(s))
-	eq(uint64(72), r.GetBitPosition())
-
 	eq(true, bytes.Equal(s, []byte{0x01, 0x02}))
 
 	expEq(uint64(0xf))(r.ReadBits(4))
-	eq(uint64(76), r.GetBitPosition())
 
 	expEq(2)(r.Read(s))
-	eq(uint64(92), r.GetBitPosition())
 	eq(true, bytes.Equal(s, []byte{0x80, 0x8f}))
 }
 
@@ -63,41 +47,28 @@ func TestReaderTry(t *testing.T) {
 	r := NewReader(bytes.NewBuffer(data))
 	eq := mighty.Eq(t)
 
-	eq(uint64(0), r.GetBitPosition())
-
 	eq(byte(3), r.TryReadByte())
-	eq(uint64(8), r.GetBitPosition())
-
 	eq(uint64(255), r.TryReadBits(8))
-	eq(uint64(16), r.GetBitPosition())
 
 	eq(uint64(0xc), r.TryReadBits(4))
-	eq(uint64(20), r.GetBitPosition())
 
 	eq(uint64(0xc1), r.TryReadBits(8))
-	eq(uint64(28), r.GetBitPosition())
 
 	eq(uint64(0xabcde), r.TryReadBits(20))
-	eq(uint64(48), r.GetBitPosition())
 
 	eq(true, r.TryReadBool())
 	eq(false, r.TryReadBool())
-	eq(uint64(50), r.GetBitPosition())
 
 	eq(uint8(6), r.Align())
-	eq(uint64(56), r.GetBitPosition())
 
 	s := make([]byte, 2)
 	eq(2, r.TryRead(s))
 	eq(true, bytes.Equal(s, []byte{0x01, 0x02}))
-	eq(uint64(72), r.GetBitPosition())
 
 	eq(uint64(0xf), r.TryReadBits(4))
-	eq(uint64(76), r.GetBitPosition())
 
 	eq(2, r.TryRead(s))
 	eq(true, bytes.Equal(s, []byte{0x80, 0x8f}))
-	eq(uint64(92), r.GetBitPosition())
 
 	eq(nil, r.TryError)
 }
