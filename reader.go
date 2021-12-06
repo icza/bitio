@@ -19,6 +19,8 @@ type readerAndByteReader interface {
 
 // Reader is the bit reader implementation.
 //
+// If you need the number of processed bits, use CountReader.
+//
 // For convenience, it also implements io.Reader and io.ByteReader.
 type Reader struct {
 	in    readerAndByteReader

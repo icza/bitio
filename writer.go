@@ -19,6 +19,8 @@ type writerAndByteWriter interface {
 
 // Writer is the bit writer implementation.
 //
+// If you need the number of processed bits, use CountWriter.
+//
 // For convenience, it also implements io.WriterCloser and io.ByteWriter.
 type Writer struct {
 	out       writerAndByteWriter
