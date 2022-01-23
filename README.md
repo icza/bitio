@@ -101,3 +101,12 @@ For performance reasons, `Reader` and `Writer` do not keep track of the number o
 If you happen to need the total number of processed bits, you may use the `CountReader` and `CountWriter` types
 which have identical API to that of `Reader` and `Writer`, but they also maintain the number of processed bits
 which you can query using the `BitsCount` field.
+
+### LICENSE
+
+Licensed under either of
+
+- [Apache License, Version 2.0](LICENSE-APACHE)
+- [GNU LESSER GENERAL PUBLIC LICENSE, Version 2.1](LICENSE-LGPL-v2.1)
+
+at your option.
