@@ -1,5 +1,4 @@
 /*
-
 Package bitio provides an optimized bit-level Reader and Writer.
 
 You can use Reader.ReadBits() to read arbitrary number of bits from an io.Reader
@@ -19,34 +18,34 @@ you best performance if the underlying io.Reader and io.Writer are aligned to a 
 byte boundary alignment by calling the Align() method of Reader and Writer. As an extra,
 io.ByteReader and io.ByteWriter are also implemented.
 
-Bit order
+# Bit order
 
 The more general highest-bits-first order is used. So for example if the input provides the bytes 0x8f and 0x55:
 
-    HEXA    8    f     5    5
-    BINARY  1100 1111  0101 0101
-            aaaa bbbc  ccdd dddd
+	HEXA    8    f     5    5
+	BINARY  1000 1111  0101 0101
+	        aaaa bbbc  ccdd dddd
 
 Then ReadBits will return the following values:
 
-    r := NewReader(bytes.NewBuffer([]byte{0x8f, 0x55}))
-    a, err := r.ReadBits(4) //   1100 = 0x08
-    b, err := r.ReadBits(3) //    111 = 0x07
-    c, err := r.ReadBits(3) //    101 = 0x05
-    d, err := r.ReadBits(6) // 010101 = 0x15
+	r := NewReader(bytes.NewBuffer([]byte{0x8f, 0x55}))
+	a, err := r.ReadBits(4) //   1000 = 0x08
+	b, err := r.ReadBits(3) //    111 = 0x07
+	c, err := r.ReadBits(3) //    101 = 0x05
+	d, err := r.ReadBits(6) // 010101 = 0x15
 
 Writing the above values would result in the same sequence of bytes:
 
-    b := &bytes.Buffer{}
-    w := NewWriter(b)
-    err := w.WriteBits(0x08, 4)
-    err = w.WriteBits(0x07, 3)
-    err = w.WriteBits(0x05, 3)
-    err = w.WriteBits(0x15, 6)
-    err = w.Close()
-    // b will hold the bytes: 0x8f and 0x55
+	b := &bytes.Buffer{}
+	w := NewWriter(b)
+	err := w.WriteBits(0x08, 4)
+	err = w.WriteBits(0x07, 3)
+	err = w.WriteBits(0x05, 3)
+	err = w.WriteBits(0x15, 6)
+	err = w.Close()
+	// b will hold the bytes: 0x8f and 0x55
 
-Error handling
+# Error handling
 
 All ReadXXX() and WriteXXX() methods return an error which you are expected to handle.
 For convenience, there are also matching TryReadXXX() and TryWriteXXX() methods
@@ -57,46 +56,45 @@ so it's safe to call multiple TryXXX() methods and defer the error checking.
 
 For example:
 
-    r := NewReader(bytes.NewBuffer([]byte{0x8f, 0x55}))
-    a := r.TryReadBits(4) //   1100 = 0x08
-    b := r.TryReadBits(3) //    111 = 0x07
-    c := r.TryReadBits(3) //    101 = 0x05
-    d := r.TryReadBits(6) // 010101 = 0x15
-    if r.TryError != nil {
-        // Handle error
-    }
+	r := NewReader(bytes.NewBuffer([]byte{0x8f, 0x55}))
+	a := r.TryReadBits(4) //   1000 = 0x08
+	b := r.TryReadBits(3) //    111 = 0x07
+	c := r.TryReadBits(3) //    101 = 0x05
+	d := r.TryReadBits(6) // 010101 = 0x15
+	if r.TryError != nil {
+	    // Handle error
+	}
 
 This allows you to easily convert the result of individual ReadBits(), like this:
 
-    r := NewReader(bytes.NewBuffer([]byte{0x8f, 0x55}))
-    a := byte(r.TryReadBits(4))   //   1100 = 0x08
-    b := int32(r.TryReadBits(3))  //    111 = 0x07
-    c := int64(r.TryReadBits(3))  //    101 = 0x05
-    d := uint16(r.TryReadBits(6)) // 010101 = 0x15
-    if r.TryError != nil {
-        // Handle error
-    }
+	r := NewReader(bytes.NewBuffer([]byte{0x8f, 0x55}))
+	a := byte(r.TryReadBits(4))   //   1000 = 0x08
+	b := int32(r.TryReadBits(3))  //    111 = 0x07
+	c := int64(r.TryReadBits(3))  //    101 = 0x05
+	d := uint16(r.TryReadBits(6)) // 010101 = 0x15
+	if r.TryError != nil {
+	    // Handle error
+	}
 
 And similarly:
 
-    b := &bytes.Buffer{}
-    w := NewWriter(b)
-    w.TryWriteBits(0x08, 4)
-    w.TryWriteBits(0x07, 3)
-    w.TryWriteBits(0x05, 3)
-    w.TryWriteBits(0x15, 6)
-    if w.TryError != nil {
-        // Handle error
-    }
-    err = w.Close()
-    // b will hold the bytes: 0x8f and 0x55
+	b := &bytes.Buffer{}
+	w := NewWriter(b)
+	w.TryWriteBits(0x08, 4)
+	w.TryWriteBits(0x07, 3)
+	w.TryWriteBits(0x05, 3)
+	w.TryWriteBits(0x15, 6)
+	if w.TryError != nil {
+	    // Handle error
+	}
+	err = w.Close()
+	// b will hold the bytes: 0x8f and 0x55
 
-Number of processed bits
+# Number of processed bits
 
 For performance reasons, Reader and Writer do not keep track of the number of read or written bits.
 If you happen to need the total number of processed bits, you may use the CountReader and CountWriter types
 which have identical API to that of Reader and Writer, but they also maintain the number of processed bits
 which you can query using the BitsCount field.
-
 */
 package bitio
