@@ -28,13 +28,13 @@ byte boundary alignment by calling the `Align()` method of `Reader` and `Writer`
 The more general highest-bits-first order is used. So for example if the input provides the bytes `0x8f` and `0x55`:
 
     HEXA    8    f     5    5
-    BINARY  1100 1111  0101 0101
+    BINARY  1000 1111  0101 0101
             aaaa bbbc  ccdd dddd
 
 Then ReadBits will return the following values:
 ```golang
 r := NewReader(bytes.NewBuffer([]byte{0x8f, 0x55}))
-a, err := r.ReadBits(4) //   1100 = 0x08
+a, err := r.ReadBits(4) //   1000 = 0x08
 b, err := r.ReadBits(3) //    111 = 0x07
 c, err := r.ReadBits(3) //    101 = 0x05
 d, err := r.ReadBits(6) // 010101 = 0x15
@@ -63,7 +63,7 @@ so it's safe to call multiple `TryXXX()` methods and defer the error checking.
 For example:
 ```golang
 r := NewReader(bytes.NewBuffer([]byte{0x8f, 0x55}))
-a := r.TryReadBits(4) //   1100 = 0x08
+a := r.TryReadBits(4) //   1000 = 0x08
 b := r.TryReadBits(3) //    111 = 0x07
 c := r.TryReadBits(3) //    101 = 0x05
 d := r.TryReadBits(6) // 010101 = 0x15
@@ -74,8 +74,8 @@ if r.TryError != nil {
 This allows you to easily convert the result of individual `ReadBits()`, like this:
 ```golang
 r := NewReader(bytes.NewBuffer([]byte{0x8f, 0x55}))
-a := byte(r.TryReadBits(4))   //   1100 = 0x08
-b := int32(r.TryReadBits(3))  //    )111 = 0x07
+a := byte(r.TryReadBits(4))   //   1000 = 0x08
+b := int32(r.TryReadBits(3))  //    111 = 0x07
 c := int64(r.TryReadBits(3))  //    101 = 0x05
 d := uint16(r.TryReadBits(6)) // 010101 = 0x15
 if r.TryError != nil {
