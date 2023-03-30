@@ -1,7 +1,7 @@
 # bitio
 
 ![Build Status](https://github.com/icza/bitio/actions/workflows/go.yml/badge.svg)
-[![GoDoc](https://godoc.org/github.com/icza/bitio?status.svg)](https://godoc.org/github.com/icza/bitio)
+[![Go Reference](https://pkg.go.dev/badge/github.com/icza/bitio.svg)](https://pkg.go.dev/github.com/icza/bitio)
 [![Go Report Card](https://goreportcard.com/badge/github.com/icza/bitio)](https://goreportcard.com/report/github.com/icza/bitio)
 [![codecov](https://codecov.io/gh/icza/bitio/branch/master/graph/badge.svg)](https://codecov.io/gh/icza/bitio)
 
