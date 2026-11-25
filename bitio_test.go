@@ -41,6 +41,54 @@ func TestReader(t *testing.T) {
 	eq(true, bytes.Equal(s, []byte{0x80, 0x8f}))
 }
 
+func TestReaderReadZeroBits(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		reads    []uint8
+		align    bool
+		nextBits uint8
+		wantNext uint64
+	}{
+		{name: "fresh", nextBits: 8, wantNext: 0xab},
+		{name: "cached", reads: []uint8{4}, nextBits: 4, wantNext: 0xb},
+		{name: "consumed", reads: []uint8{4, 4}, nextBits: 8, wantNext: 0xcd},
+		{name: "aligned", reads: []uint8{4}, align: true, nextBits: 8, wantNext: 0xcd},
+		{name: "consumed_with_byte", reads: []uint8{4, 12}, nextBits: 8, wantNext: 0xef},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			r := NewReader(bytes.NewBuffer([]byte{0xab, 0xcd, 0xef}))
+			eq, expEq := mighty.EqExpEq(t)
+			for _, n := range tc.reads {
+				_, err := r.ReadBits(n)
+				eq(nil, err)
+			}
+			if tc.align {
+				eq(uint8(4), r.Align())
+			}
+
+			expEq(uint64(0))(r.ReadBits(0))
+			eq(uint64(0), r.TryReadBits(0))
+			eq(nil, r.TryError)
+			expEq(tc.wantNext)(r.ReadBits(tc.nextBits))
+		})
+	}
+
+	t.Run("empty", func(t *testing.T) {
+		r := NewReader(bytes.NewBuffer(nil))
+		eq, expEq := mighty.EqExpEq(t)
+		expEq(uint64(0))(r.ReadBits(0))
+		eq(uint64(0), r.TryReadBits(0))
+		eq(nil, r.TryError)
+		_, err := r.ReadBits(1)
+		eq(io.EOF, err)
+		expEq(uint64(0))(r.ReadBits(0))
+		r.TryReadBits(1)
+		eq(io.EOF, r.TryError)
+		eq(uint64(0), r.TryReadBits(0))
+		eq(io.EOF, r.TryError)
+	})
+}
+
 func TestReaderTry(t *testing.T) {
 	data := []byte{3, 255, 0xcc, 0x1a, 0xbc, 0xde, 0x80, 0x01, 0x02, 0xf8, 0x08, 0xf0}
 

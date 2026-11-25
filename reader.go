@@ -63,6 +63,10 @@ func (r *Reader) Read(p []byte) (n int, err error) {
 
 // ReadBits reads n bits and returns them as the lowest n bits of u.
 func (r *Reader) ReadBits(n uint8) (u uint64, err error) {
+	if n == 0 {
+		return 0, nil
+	}
+
 	// Some optimization, frequent cases
 	if n < r.bits {
 		// cache has all needed bits, and there are some extra which will be left in cache
