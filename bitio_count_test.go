@@ -56,6 +56,19 @@ func TestCountReader(t *testing.T) {
 	eq(true, bytes.Equal(s, []byte{0x80, 0x8f}))
 }
 
+func TestCountReaderReadZeroBits(t *testing.T) {
+	r := NewCountReader(bytes.NewBuffer([]byte{0xab, 0xcd}))
+	eq, expEq := mighty.EqExpEq(t)
+	expEq(uint64(0xa))(r.ReadBits(4))
+	expEq(uint64(0xb))(r.ReadBits(4))
+	expEq(uint64(0))(r.ReadBits(0))
+	eq(uint64(0), r.TryReadBits(0))
+	eq(nil, r.TryError)
+	eq(int64(8), r.BitsCount)
+	expEq(uint64(0xcd))(r.ReadBits(8))
+	eq(int64(16), r.BitsCount)
+}
+
 func TestCountReaderTry(t *testing.T) {
 	data := []byte{3, 255, 0xcc, 0x1a, 0xbc, 0xde, 0x80, 0x01, 0x02, 0xf8, 0x08, 0xf0}
 
